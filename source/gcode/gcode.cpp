@@ -498,6 +498,12 @@ std::vector<gcgg::command *> gcode::process(const config & __restrict cfg) const
       // State Commands (these do not generate opcodes, and instead are used for calculating motion or other things)
     case hash("M204"): {
       // SET DEFAULT ACCELERATION
+      if (command.has_argument("S")) // Legacy, but still used by some slicers like Cura
+      {
+        print_accel = command.get_argument("S", print_accel);
+        travel_accel = command.get_argument("S", travel_accel);
+      }
+
       print_accel = command.get_argument("P", print_accel);
       travel_accel = command.get_argument("T", travel_accel);
       retract_accel = command.get_argument("R", retract_accel);

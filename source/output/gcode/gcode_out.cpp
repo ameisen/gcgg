@@ -11,6 +11,7 @@ bool gcgg::output::write_gcode(const std::string & __restrict filename, const st
   output += "G21\n"; // Set units to millimeters
   output += "G90\n"; // Absolute Positioning
   output += "M83\n"; // Relative Extrusion
+  output += "M107\n"; // Fan starts off.
 
 
 

@@ -29,7 +29,7 @@ namespace gcgg::segments
     {
       if (acceleration_hint_ != state.travel_accel && acceleration_hint_ != 0)
       {
-        state.print_accel = acceleration_hint_;
+        state.travel_accel = acceleration_hint_;
 
         out += "M204";
 

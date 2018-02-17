@@ -6,3 +6,8 @@ build/msvc/.vs/gcgg/v15/Browse.VC.db
 *.ilk
 *.exe
 *.pdb
+*.obj
+*.log
+*.pch
+*.tlog
+*.idb
