@@ -1,0 +1,151 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="platform">
+      <UniqueIdentifier>{b353390f-2a8e-46f5-becd-83ece9ce5170}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="platform\windows">
+      <UniqueIdentifier>{4f0cad1e-417b-4c93-a5e5-e98c3a498fc2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="segment">
+      <UniqueIdentifier>{e1c15fe3-85ab-445b-94b5-882f8ec4a37e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="gcode">
+      <UniqueIdentifier>{79e27c0c-9111-4490-ba72-f2d2c20ec85b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="instruction">
+      <UniqueIdentifier>{609430fd-a653-471f-8861-e9d9fa176e78}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="output">
+      <UniqueIdentifier>{f7c052b9-9d49-428d-87e9-09e6a361e193}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="output\gcode">
+      <UniqueIdentifier>{ac2655ae-29f6-4d73-be80-16f786b546af}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\source\platform\windows\entry.cpp">
+      <Filter>platform\windows</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\gcgg.cpp" />
+    <ClCompile Include="..\..\source\gcode\gcode.cpp">
+      <Filter>gcode</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\segment\extrusion.cpp">
+      <Filter>segment</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\segment\extrusion_move.cpp">
+      <Filter>segment</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\segment\travel.cpp">
+      <Filter>segment</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\segment\hop.cpp">
+      <Filter>segment</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\segment\linear.cpp">
+      <Filter>segment</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\output\gcode\gcode_out.cpp">
+      <Filter>output\gcode</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\segment\segment.cpp">
+      <Filter>segment</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\source\gcgg.hpp" />
+    <ClInclude Include="..\..\source\platform\windows\windows.hpp">
+      <Filter>platform\windows</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\segment\segment.hpp">
+      <Filter>segment</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\platform\windows\types.hpp">
+      <Filter>platform\windows</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\platform\windows\defines.hpp">
+      <Filter>platform\windows</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\platform\platform.hpp">
+      <Filter>platform</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\gcode\gcode.hpp">
+      <Filter>gcode</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\segment\extrusion.hpp">
+      <Filter>segment</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\segment\extrusion_move.hpp">
+      <Filter>segment</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\segment\travel.hpp">
+      <Filter>segment</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\segment\hop.hpp">
+      <Filter>segment</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\segment\linear.hpp">
+      <Filter>segment</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\platform\vector3.hpp">
+      <Filter>platform</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\segment\movement.hpp">
+      <Filter>segment</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\platform\hash.hpp">
+      <Filter>platform</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\command.hpp" />
+    <ClInclude Include="..\..\source\platform\math.hpp">
+      <Filter>platform</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\platform\math_post.hpp">
+      <Filter>platform</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\instruction\delay_instruction.hpp">
+      <Filter>instruction</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\instruction\instruction.hpp">
+      <Filter>instruction</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\instruction\M104.hpp">
+      <Filter>instruction</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\gcode\command.hpp">
+      <Filter>gcode</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\instruction\M106.hpp">
+      <Filter>instruction</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\instruction\M107.hpp">
+      <Filter>instruction</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\instruction\M109.hpp">
+      <Filter>instruction</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\instruction\M140.hpp">
+      <Filter>instruction</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\instruction\M190.hpp">
+      <Filter>instruction</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\instruction\G28.hpp">
+      <Filter>instruction</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\output\gcode\gcode_out.hpp">
+      <Filter>output\gcode</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\output\state.hpp">
+      <Filter>output</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\config.hpp" />
+    <ClInclude Include="..\..\source\instruction\M84.hpp">
+      <Filter>instruction</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\segment\arc.hpp">
+      <Filter>segment</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

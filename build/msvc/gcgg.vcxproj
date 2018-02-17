@@ -1,0 +1,164 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>15.0</VCProjectVersion>
+    <ProjectGuid>{3805A802-E3C5-4529-A5C5-6C19E81B6074}</ProjectGuid>
+    <RootNamespace>gcgg</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>$(SolutionDir)..\..\out\$(Platform)_$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)intermediate\$(Platform)_$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>$(SolutionDir)..\..\out\$(Platform)_$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)intermediate\$(Platform)_$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\..\source</AdditionalIncludeDirectories>
+      <EnforceTypeConversionRules>true</EnforceTypeConversionRules>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <OpenMPSupport>false</OpenMPSupport>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <EnableModules>true</EnableModules>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>gcgg.hpp</PrecompiledHeaderFile>
+      <CompileAsManaged>false</CompileAsManaged>
+      <CompileAsWinRT>false</CompileAsWinRT>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS=1;_NO_DEBUG_HEAP=1;_HAS_ITERATOR_DEBUGGING=0;_SCL_SECURE=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <DisableSpecificWarnings>4307</DisableSpecificWarnings>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>false</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\..\source</AdditionalIncludeDirectories>
+      <EnforceTypeConversionRules>true</EnforceTypeConversionRules>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <OpenMPSupport>false</OpenMPSupport>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <EnableModules>true</EnableModules>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>gcgg.hpp</PrecompiledHeaderFile>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <OmitFramePointers>true</OmitFramePointers>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+      <StringPooling>true</StringPooling>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <ControlFlowGuard>false</ControlFlowGuard>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <FloatingPointExceptions>false</FloatingPointExceptions>
+      <CompileAsManaged>false</CompileAsManaged>
+      <CompileAsWinRT>false</CompileAsWinRT>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS=1;_NO_DEBUG_HEAP=1;_HAS_ITERATOR_DEBUGGING=0;_SCL_SECURE=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <DisableSpecificWarnings>4307</DisableSpecificWarnings>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <SubSystem>Console</SubSystem>
+      <LargeAddressAware>true</LargeAddressAware>
+      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\source\gcgg.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\..\source\gcode\gcode.cpp" />
+    <ClCompile Include="..\..\source\output\gcode\gcode_out.cpp" />
+    <ClCompile Include="..\..\source\platform\windows\entry.cpp" />
+    <ClCompile Include="..\..\source\segment\extrusion.cpp" />
+    <ClCompile Include="..\..\source\segment\extrusion_move.cpp" />
+    <ClCompile Include="..\..\source\segment\hop.cpp" />
+    <ClCompile Include="..\..\source\segment\linear.cpp" />
+    <ClCompile Include="..\..\source\segment\segment.cpp" />
+    <ClCompile Include="..\..\source\segment\travel.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\source\command.hpp" />
+    <ClInclude Include="..\..\source\config.hpp" />
+    <ClInclude Include="..\..\source\gcgg.hpp" />
+    <ClInclude Include="..\..\source\gcode\command.hpp" />
+    <ClInclude Include="..\..\source\gcode\gcode.hpp" />
+    <ClInclude Include="..\..\source\instruction\delay_instruction.hpp" />
+    <ClInclude Include="..\..\source\instruction\G28.hpp" />
+    <ClInclude Include="..\..\source\instruction\instruction.hpp" />
+    <ClInclude Include="..\..\source\instruction\M104.hpp" />
+    <ClInclude Include="..\..\source\instruction\M106.hpp" />
+    <ClInclude Include="..\..\source\instruction\M107.hpp" />
+    <ClInclude Include="..\..\source\instruction\M109.hpp" />
+    <ClInclude Include="..\..\source\instruction\M140.hpp" />
+    <ClInclude Include="..\..\source\instruction\M190.hpp" />
+    <ClInclude Include="..\..\source\instruction\M84.hpp" />
+    <ClInclude Include="..\..\source\output\gcode\gcode_out.hpp" />
+    <ClInclude Include="..\..\source\output\state.hpp" />
+    <ClInclude Include="..\..\source\platform\hash.hpp" />
+    <ClInclude Include="..\..\source\platform\math.hpp" />
+    <ClInclude Include="..\..\source\platform\math_post.hpp" />
+    <ClInclude Include="..\..\source\platform\platform.hpp" />
+    <ClInclude Include="..\..\source\platform\vector3.hpp" />
+    <ClInclude Include="..\..\source\platform\windows\defines.hpp" />
+    <ClInclude Include="..\..\source\platform\windows\types.hpp" />
+    <ClInclude Include="..\..\source\platform\windows\windows.hpp" />
+    <ClInclude Include="..\..\source\segment\arc.hpp" />
+    <ClInclude Include="..\..\source\segment\extrusion.hpp" />
+    <ClInclude Include="..\..\source\segment\extrusion_move.hpp" />
+    <ClInclude Include="..\..\source\segment\hop.hpp" />
+    <ClInclude Include="..\..\source\segment\linear.hpp" />
+    <ClInclude Include="..\..\source\segment\movement.hpp" />
+    <ClInclude Include="..\..\source\segment\segment.hpp" />
+    <ClInclude Include="..\..\source\segment\travel.hpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

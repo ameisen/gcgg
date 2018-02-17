@@ -1,0 +1,8 @@
+
+build/msvc/.vs/gcgg/v15/.suo
+build/msvc/.vs/gcgg/v15/Browse.VC.db
+*.opendb
+*.ipch
+*.ilk
+*.exe
+*.pdb
