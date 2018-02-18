@@ -12,7 +12,10 @@ namespace gcgg::segments
 
   protected:
   public:
-    hop() : movement(type) {}
+    hop() : movement(type)
+    {
+      is_travel_ = true;
+    }
     virtual ~hop() {}
 
     virtual std::string dump() const __restrict override final

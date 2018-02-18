@@ -77,8 +77,10 @@ namespace gcgg::segments
   public:
     // Lazy so making this public.
     // These are printer hints that are being kept around.
+    vector3<> acceleration_;
     real acceleration_hint_ = 0.0;
     vector3<> jerk_hint_;
     real jerk_extrude_hint_ = 0.0;
+    bool is_travel_ = false;
   };
 }

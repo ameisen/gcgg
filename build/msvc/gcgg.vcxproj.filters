@@ -22,6 +22,9 @@
     <Filter Include="output\gcode">
       <UniqueIdentifier>{ac2655ae-29f6-4d73-be80-16f786b546af}</UniqueIdentifier>
     </Filter>
+    <Filter Include="motion">
+      <UniqueIdentifier>{b6a0463d-88bc-4054-b358-de5547299483}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\source\platform\windows\entry.cpp">
@@ -52,6 +55,9 @@
     <ClCompile Include="..\..\source\segment\segment.cpp">
       <Filter>segment</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\motion\trapezoid.cpp">
+      <Filter>motion</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\source\gcgg.hpp" />
@@ -77,9 +83,6 @@
       <Filter>segment</Filter>
     </ClInclude>
     <ClInclude Include="..\..\source\segment\extrusion_move.hpp">
-      <Filter>segment</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\source\segment\travel.hpp">
       <Filter>segment</Filter>
     </ClInclude>
     <ClInclude Include="..\..\source\segment\hop.hpp">
@@ -146,6 +149,12 @@
     </ClInclude>
     <ClInclude Include="..\..\source\segment\arc.hpp">
       <Filter>segment</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\segment\travel.hpp">
+      <Filter>segment</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\motion\trapezoid.hpp">
+      <Filter>motion</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

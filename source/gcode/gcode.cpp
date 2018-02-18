@@ -177,9 +177,10 @@ std::vector<gcgg::command *> gcode::process(const config & __restrict cfg) const
   std::vector<gcgg::command *> out;
 
   real feedrate = 0.0;
-  real print_accel = 0.0;
-  real travel_accel = 0.0;
-  real retract_accel = 0.0;
+  real print_accel = cfg.defaults.acceleration.max_element();
+  real travel_accel = cfg.defaults.acceleration.max_element();
+  real retract_accel = cfg.defaults.extrusion_acceleration;
+  vector3<> acceleration = cfg.defaults.acceleration;
   vector3<> jerk;
   real extrude_jerk = 0.0;
   std::unordered_map<uint, uint> extruder_temp;
@@ -239,6 +240,7 @@ std::vector<gcgg::command *> gcode::process(const config & __restrict cfg) const
         cmd->set_positions(start_position, position);
         cmd->set_feedrate(feedrate);
         cmd->acceleration_hint_ = travel_accel;
+        cmd->acceleration_ = acceleration.limit({ travel_accel, travel_accel, travel_accel });
         cmd->jerk_hint_ = jerk;
         cmd->jerk_extrude_hint_ = extrude_jerk;
         out.push_back(cmd);
@@ -249,6 +251,7 @@ std::vector<gcgg::command *> gcode::process(const config & __restrict cfg) const
         cmd->set_positions(start_position, position);
         cmd->set_feedrate(feedrate);
         cmd->acceleration_hint_ = travel_accel;
+        cmd->acceleration_ = acceleration.limit({ travel_accel, travel_accel, travel_accel });
         cmd->jerk_hint_ = jerk;
         cmd->jerk_extrude_hint_ = extrude_jerk;
         out.push_back(cmd);
@@ -296,6 +299,7 @@ std::vector<gcgg::command *> gcode::process(const config & __restrict cfg) const
           cmd->set_extrude(extrude);
           cmd->set_feedrate(feedrate);
           cmd->acceleration_hint_ = print_accel;
+          cmd->acceleration_ = acceleration.limit({ print_accel, print_accel, print_accel });
           cmd->jerk_hint_ = jerk;
           cmd->jerk_extrude_hint_ = extrude_jerk;
           out.push_back(cmd);
@@ -307,6 +311,7 @@ std::vector<gcgg::command *> gcode::process(const config & __restrict cfg) const
           cmd->set_extrude(extrude);
           cmd->set_feedrate(feedrate);
           cmd->acceleration_hint_ = retract_accel;
+          cmd->acceleration_ = vector3<>(cfg.defaults.extrusion_acceleration).limit({ retract_accel, retract_accel, retract_accel }); // TODO extrusion acceleration?
           cmd->jerk_hint_ = jerk;
           cmd->jerk_extrude_hint_ = extrude_jerk;
           out.push_back(cmd);
@@ -320,6 +325,7 @@ std::vector<gcgg::command *> gcode::process(const config & __restrict cfg) const
           cmd->set_positions(start_position, position);
           cmd->set_feedrate(feedrate);
           cmd->acceleration_hint_ = print_accel;
+          cmd->acceleration_ = acceleration.limit({ print_accel, print_accel, print_accel });
           cmd->jerk_hint_ = jerk;
           cmd->jerk_extrude_hint_ = extrude_jerk;
           out.push_back(cmd);
@@ -330,6 +336,7 @@ std::vector<gcgg::command *> gcode::process(const config & __restrict cfg) const
           cmd->set_positions(start_position, position);
           cmd->set_feedrate(feedrate);
           cmd->acceleration_hint_ = travel_accel;
+          cmd->acceleration_ = acceleration.limit({ travel_accel, travel_accel, travel_accel });
           cmd->jerk_hint_ = jerk;
           cmd->jerk_extrude_hint_ = extrude_jerk;
           out.push_back(cmd);
@@ -765,7 +772,9 @@ std::vector<gcgg::command *> gcode::process(const config & __restrict cfg) const
         continue;
       }
 
-      double arc_radius = cfg.arc.radius;
+      const bool is_travel = prev_segment_cmd->is_travel_ && cur_segment_cmd->is_travel_;
+
+      double arc_radius = is_travel ? cfg.arc.travel_radius : cfg.arc.radius;
 
       // TODO in reality we should be generating ovaloid arcs, to handle differences in velocity.
 
@@ -851,9 +860,17 @@ std::vector<gcgg::command *> gcode::process(const config & __restrict cfg) const
       prev_segment_cmd->set_end_position(prev_seg_new_end);
       cur_segment_cmd->set_start_position(cur_seg_new_start);
 
+      real start_feedrate = prev_segment_cmd->get_feedrate();
+      real end_feedrate = cur_segment_cmd->get_feedrate();
+      if (cfg.arc.constant_speed)
+      {
+        // If we are a constant speed arc, average out the two feedrates.
+        start_feedrate = end_feedrate = (start_feedrate + end_feedrate) * 0.5;
+      }
+
       auto * __restrict new_arc = new segments::arc(
         segment_extrude_remainder,
-        { prev_segment_cmd->get_feedrate(), cur_segment_cmd->get_feedrate() },
+        { start_feedrate, end_feedrate },
         { prev_segment_cmd->acceleration_hint_,  cur_segment_cmd->acceleration_hint_ },
         { prev_segment_cmd->jerk_hint_,  cur_segment_cmd->jerk_hint_ },
         { prev_segment_cmd->jerk_extrude_hint_,  cur_segment_cmd->jerk_extrude_hint_ },
@@ -863,6 +880,8 @@ std::vector<gcgg::command *> gcode::process(const config & __restrict cfg) const
         arc_radius,
         angle
       );
+
+      new_arc->is_travel_ = is_travel;
 
       // Do we need to delete the previous segment (has it been completely replaced with arcs?
       if (is_equal(prev_segment_cmd->get_vector().length(), 0.0))

@@ -114,6 +114,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="..\..\source\gcode\gcode.cpp" />
+    <ClCompile Include="..\..\source\motion\trapezoid.cpp" />
     <ClCompile Include="..\..\source\output\gcode\gcode_out.cpp" />
     <ClCompile Include="..\..\source\platform\windows\entry.cpp" />
     <ClCompile Include="..\..\source\segment\extrusion.cpp" />
@@ -139,6 +140,7 @@
     <ClInclude Include="..\..\source\instruction\M140.hpp" />
     <ClInclude Include="..\..\source\instruction\M190.hpp" />
     <ClInclude Include="..\..\source\instruction\M84.hpp" />
+    <ClInclude Include="..\..\source\motion\trapezoid.hpp" />
     <ClInclude Include="..\..\source\output\gcode\gcode_out.hpp" />
     <ClInclude Include="..\..\source\output\state.hpp" />
     <ClInclude Include="..\..\source\platform\hash.hpp" />

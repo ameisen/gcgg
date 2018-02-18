@@ -12,7 +12,10 @@ namespace gcgg::segments
 
   protected:
   public:
-    travel() : movement(type) {}
+    travel() : movement(type)
+    {
+      is_travel_ = true;
+    }
     virtual ~travel() {}
 
     virtual std::string dump() const __restrict override final
