@@ -53,5 +53,7 @@ namespace gcgg
 
     virtual bool is_segment() const __restrict = 0;
     virtual bool is_instruction() const __restrict = 0;
+
+    virtual void compute_motion() __restrict {}
   };
 }

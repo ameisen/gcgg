@@ -6,6 +6,11 @@ namespace gcgg
   {
     struct
     {
+      bool all_no_extrude_as_travel = true;
+    } options;
+
+    struct
+    {
       real epsilon = 0.1; // 0.02;
     } extrusion;
 
@@ -13,9 +18,9 @@ namespace gcgg
     {
       bool generate = true;
       bool constant_speed = true; // Should the arc only allow a constant speed across it?
-      real min_angle = 10.0; // 45 degrees
+      real min_angle = 0.0; // 45 degrees
       real radius = 0.1; // The radius of the circle of the arc. Also equal to how much of a linear segment is 'cut off' from the corner.
-      real travel_radius = 1.0; // Travels can have a much larger radius.
+      real travel_radius = 5.0; // Travels can have a much larger radius.
       real min_radius = 0.05; // might need to be smaller... or larger.
       real gcode_segment_modulus = 45.0; // per angle difference, how many subdivisions to generate. // Values > 180 guarantee that all arcs will generate a single linear segment.
     } arc;
@@ -30,6 +35,8 @@ namespace gcgg
     {
       format format = format::gcode;
       bool subdivide_arcs = true; // Should we turn arcs into sets of segments?
+
+      bool generate_G15 = false; // G15 is a custom instruction that generates a movement arc. Not the same as a controlled arc.
     } output;
 
     struct

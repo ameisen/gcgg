@@ -24,6 +24,9 @@ namespace gcgg::segments
     real angle_;
 
   public:
+    vector3<> parent_velocities_[2];
+
+  public:
     real get_feedrate_element(usize i) const __restrict
     {
       xassert(i < 2);
@@ -263,6 +266,71 @@ namespace gcgg::segments
     {
       const vector3<> center_point = (start_position_ + end_position_) * 0.5;
       const vector3<> arc_origin = corner_ + ((center_point - corner_) * 2.0); // TODO needs to be adjusted for ovaloid arcs.
+
+      if (cfg.output.generate_G15)
+      {
+        // G15 specifies the input feedrate and output feedrate for each axis. The firmware linearly interpolates between these based on time.
+        vector3<> in_feedrate = parent_velocities_[0];
+        vector3<> out_feedrate = parent_velocities_[1];
+
+        real extrusion;
+        {
+          extrusion = extrude_[0] + extrude_[1];
+          // TODO extrude value needs to be adjusted for arc length,
+          // as an arc is shorter than the original length it replaces.
+        }
+
+        // TODO process acceleration and jerk
+
+        out += "G15";
+        char buffer[512];
+
+        if (start_position_.x != end_position_.x)
+        {
+          state.position.x = end_position_.x;
+          sprintf(buffer, "%.8f", state.position.x);
+          out += " X";
+          out += trim_float(buffer);
+        }
+        if (start_position_.y != end_position_.y)
+        {
+          state.position.y = end_position_.y;
+          sprintf(buffer, "%.8f", state.position.y);
+          out += " Y";
+          out += trim_float(buffer);
+        }
+        if (start_position_.z != end_position_.z)
+        {
+          state.position.z = end_position_.z;
+          sprintf(buffer, "%.8f", state.position.z);
+          out += " Z";
+          out += trim_float(buffer);
+        }
+
+        sprintf(buffer, "%.8f", in_feedrate.x);
+        out += " A";
+        out += trim_float(buffer);
+        sprintf(buffer, "%.8f", in_feedrate.y);
+        out += " B";
+        out += trim_float(buffer);
+        sprintf(buffer, "%.8f", in_feedrate.z);
+        out += " C";
+        out += trim_float(buffer);
+
+        sprintf(buffer, "%.8f", out_feedrate.x);
+        out += " D";
+        out += trim_float(buffer);
+        sprintf(buffer, "%.8f", out_feedrate.y);
+        out += " E";
+        out += trim_float(buffer);
+        sprintf(buffer, "%.8f", out_feedrate.z);
+        out += " F";
+        out += trim_float(buffer);
+
+        // TODO need to output a time value. This requires the arc length, which is also required to adjust extrusion.
+
+        return;
+      }
 
       const uint subdivisions = std::max(uint(std::round((angle_ / cfg.arc.gcode_segment_modulus)) + 0.5), 0u);
 
@@ -527,6 +595,10 @@ namespace gcgg::segments
       }
 
       out += " ; arc\n";
+    }
+
+    virtual void compute_motion() __restrict override final
+    {
     }
   };
 }

@@ -6,8 +6,8 @@ int main(int argc, const char * const __restrict * const __restrict argv)
 {
   //static const char dummy_file[] = "C:\\Users\\mkuklinski\\Documents\\MSP_1-100 Tiger II-1.gcode";
   //static const char out_file[] = "C:\\Users\\mkuklinski\\Documents\\OPT_1-100 Tiger II-1.gcode";
-  static const char dummy_file[] = "H:\\MSP_test_cube_holes.gcode";
-  static const char out_file[] = "H:\\OPT_test_cube_holes.gcode";
+  static const char dummy_file[] = "H:\\MSP_1-100 Jagdpanther-late-schurzen-2.gcode";
+  static const char out_file[] = "H:\\OPT_1-100 Jagdpanther-late-schurzen-2.gcode";
 
   gcode _gc = { dummy_file };
 

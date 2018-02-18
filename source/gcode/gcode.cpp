@@ -321,14 +321,28 @@ std::vector<gcgg::command *> gcode::process(const config & __restrict cfg) const
       {
         if (has_xy)
         {
-          auto * __restrict cmd = new segments::linear;
-          cmd->set_positions(start_position, position);
-          cmd->set_feedrate(feedrate);
-          cmd->acceleration_hint_ = print_accel;
-          cmd->acceleration_ = acceleration.limit({ print_accel, print_accel, print_accel });
-          cmd->jerk_hint_ = jerk;
-          cmd->jerk_extrude_hint_ = extrude_jerk;
-          out.push_back(cmd);
+          if (cfg.options.all_no_extrude_as_travel)
+          {
+            auto * __restrict cmd = new segments::travel;
+            cmd->set_positions(start_position, position);
+            cmd->set_feedrate(feedrate);
+            cmd->acceleration_hint_ = print_accel;
+            cmd->acceleration_ = acceleration.limit({ print_accel, print_accel, print_accel });
+            cmd->jerk_hint_ = jerk;
+            cmd->jerk_extrude_hint_ = extrude_jerk;
+            out.push_back(cmd);
+          }
+          else
+          {
+            auto * __restrict cmd = new segments::linear;
+            cmd->set_positions(start_position, position);
+            cmd->set_feedrate(feedrate);
+            cmd->acceleration_hint_ = print_accel;
+            cmd->acceleration_ = acceleration.limit({ print_accel, print_accel, print_accel });
+            cmd->jerk_hint_ = jerk;
+            cmd->jerk_extrude_hint_ = extrude_jerk;
+            out.push_back(cmd);
+          }
         }
         else if (has_z)
         {
@@ -673,6 +687,38 @@ std::vector<gcgg::command *> gcode::process(const config & __restrict cfg) const
     );
   }
 
+  printf("Linking motion segments\n");
+  {
+    gcgg::segments::segment * __restrict prev_seg = nullptr;
+    for (gcgg::command * __restrict cmd : out)
+    {
+      if (!cmd->is_segment())
+      {
+        if (cmd->is_delay())
+        {
+          prev_seg = nullptr;
+        }
+        continue;
+      }
+
+      gcgg::segments::segment * __restrict cur_seg = static_cast<gcgg::segments::segment * __restrict>(cmd);
+      if (prev_seg)
+      {
+        prev_seg->next_segment_ = cur_seg;
+        cur_seg->prev_segment_ = prev_seg;
+      }
+
+      prev_seg = cur_seg;
+    }
+  }
+
+  // Calculate trapezoid values. We need to do this more than once.
+  printf("Calculating Motion\n");
+  for (auto * __restrict seg : out)
+  {
+    seg->compute_motion();
+  }
+
   if (cfg.arc.generate && out.size() >= 2)
   {
     usize generated_arcs = 0;
@@ -766,7 +812,7 @@ std::vector<gcgg::command *> gcode::process(const config & __restrict cfg) const
 
       const double angle = std::acos(segment_norm_vectors[0].dot(segment_norm_vectors[1])) * 57.2958;
 
-      if (angle < cfg.arc.min_angle)
+      if (angle <= cfg.arc.min_angle)
       {
         prev_iter = iter++;
         continue;
@@ -881,6 +927,9 @@ std::vector<gcgg::command *> gcode::process(const config & __restrict cfg) const
         angle
       );
 
+      new_arc->parent_velocities_[0] = (prev_segment_cmd->get_end_position() - prev_segment_cmd->get_start_position()).normalized(prev_segment_cmd->get_feedrate());
+      new_arc->parent_velocities_[1] = (cur_segment_cmd->get_end_position() - cur_segment_cmd->get_start_position()).normalized(cur_segment_cmd->get_feedrate());
+
       new_arc->is_travel_ = is_travel;
 
       // Do we need to delete the previous segment (has it been completely replaced with arcs?
@@ -926,38 +975,34 @@ std::vector<gcgg::command *> gcode::process(const config & __restrict cfg) const
   }
 
   printf("Linking motion segments\n");
-  gcgg::segments::segment * __restrict prev_seg = nullptr;
-  for (gcgg::command * __restrict cmd : out)
   {
-    if (!cmd->is_segment())
+    gcgg::segments::segment * __restrict prev_seg = nullptr;
+    for (gcgg::command * __restrict cmd : out)
     {
-      if (cmd->is_delay())
+      if (!cmd->is_segment())
       {
-        prev_seg = nullptr;
+        if (cmd->is_delay())
+        {
+          prev_seg = nullptr;
+        }
+        continue;
       }
-      continue;
-    }
 
-    gcgg::segments::segment * __restrict cur_seg = static_cast<gcgg::segments::segment * __restrict>(cmd);
-    if (prev_seg)
-    {
-      prev_seg->next_segment_ = cur_seg;
-      cur_seg->prev_segment_ = prev_seg;
-    }
+      gcgg::segments::segment * __restrict cur_seg = static_cast<gcgg::segments::segment * __restrict>(cmd);
+      if (prev_seg)
+      {
+        prev_seg->next_segment_ = cur_seg;
+        cur_seg->prev_segment_ = prev_seg;
+      }
 
-    prev_seg = cur_seg;
+      prev_seg = cur_seg;
+    }
   }
 
-  for (gcgg::command * __restrict cmd : out)
+  printf("Calculating Motion\n");
+  for (auto * __restrict seg : out)
   {
-    if (!cmd->is_segment())
-    {
-      continue;
-    }
-
-    gcgg::segments::segment * __restrict cur_seg = static_cast<gcgg::segments::segment * __restrict>(cmd);
-    
-    cur_seg->calculate_motion_data();
+    seg->compute_motion();
   }
 
   return out;

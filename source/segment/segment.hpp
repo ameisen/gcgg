@@ -10,7 +10,7 @@ namespace gcgg::segments
     segment(uint64 type) : command(type) {}
     virtual ~segment() {}
 
-    virtual vector3<> get_vector() const __restrict { return { 0.0, 0.0, 0.0 }; }
+    virtual vector3<> get_vector() const __restrict { return vector3<>::zero; }
 
     virtual bool is_segment() const __restrict override final { return true; }
     virtual bool is_instruction() const __restrict override final { return false; }
@@ -33,6 +33,6 @@ namespace gcgg::segments
       return motion_data_.calculated_;
     }
 
-    void calculate_motion_data();
+    virtual vector3<> get_velocity() const __restrict { return vector3<>::zero; }
   };
 }

@@ -8,6 +8,7 @@
 #include "linear.hpp"
 #include "travel.hpp"
 
+#if 0
 void segments::segment::calculate_motion_data()
 {
   motion_data_.calculated_ = true;
@@ -68,3 +69,4 @@ void segments::segment::calculate_motion_data()
     }
   }
 }
+#endif

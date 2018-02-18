@@ -58,6 +58,9 @@
     <ClCompile Include="..\..\source\motion\trapezoid.cpp">
       <Filter>motion</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\segment\movement.cpp">
+      <Filter>segment</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\source\gcgg.hpp" />

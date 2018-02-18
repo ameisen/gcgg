@@ -74,6 +74,10 @@ namespace gcgg::segments
       start_position_ = position;
     }
 
+    virtual void compute_motion() __restrict override;
+
+    virtual vector3<> get_velocity() const __restrict { return (end_position_ - start_position_).normalized(feedrate_); }
+
   public:
     // Lazy so making this public.
     // These are printer hints that are being kept around.

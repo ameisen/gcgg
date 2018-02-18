@@ -49,6 +49,24 @@ namespace gcgg
       return std::sqrt(length_sq());
     }
 
+    // Do any of the axes have the opposite sign of the other vector>
+    constexpr bool is_inverted(const vector3 &__restrict vec) const __restrict
+    {
+      const auto same_sign = [](real a, real b) -> bool
+      {
+        // Technically, going _to_ zero is also an inversion as you cannot generate scaling values
+        // to zero or across zero.
+        return ((a < -0.0) && (b < -0.0)) || ((a > 0.0) && (b > 0.0));
+      };
+
+      return !same_sign(x, vec.x) || !same_sign(y, vec.y) || !same_sign(z, vec.z);
+    }
+
+    constexpr real linear_sum() const __restrict
+    {
+      return x + y + z;
+    }
+
     constexpr void normalize(T magnitude = 1.0) __restrict
     {
       const T current_magnitude_recip = magnitude / length();
@@ -104,12 +122,12 @@ namespace gcgg
       return { x * val, y * val, z * val };
     }
 
-    constexpr vector3 operator / (real va) const __restrict
+    constexpr vector3 operator / (real val) const __restrict
     {
       return { x / val, y / val, z / val };
     }
 
-    constexpr vector3 operator % (real va) const __restrict
+    constexpr vector3 operator % (real val) const __restrict
     {
       return { std::fmod(x, val), std::fmod(y, val), std::fmod(z, val) };
     }
@@ -234,5 +252,9 @@ namespace gcgg
     {
       return { std::abs(x), std::abs(y), std::abs(z) };
     }
+
+    static const vector3 zero;
   };
+
+  constexpr const vector3<real> vector3<real>::zero = { 0, 0, 0 };
 }

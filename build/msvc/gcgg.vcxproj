@@ -121,6 +121,7 @@
     <ClCompile Include="..\..\source\segment\extrusion_move.cpp" />
     <ClCompile Include="..\..\source\segment\hop.cpp" />
     <ClCompile Include="..\..\source\segment\linear.cpp" />
+    <ClCompile Include="..\..\source\segment\movement.cpp" />
     <ClCompile Include="..\..\source\segment\segment.cpp" />
     <ClCompile Include="..\..\source\segment\travel.cpp" />
   </ItemGroup>
