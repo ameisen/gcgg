@@ -23,6 +23,8 @@
 #include <cstdio>
 #include <cctype>
 
+#include <list>
+
 gcode::gcode(const std::string &__restrict filename)
 {
   FILE *fp = fopen(filename.c_str(), "rb");
@@ -175,14 +177,16 @@ std::vector<gcgg::command *> gcode::process(const config & __restrict cfg) const
   printf("Processing...\n");
 
   std::vector<gcgg::command *> out;
+  // Reserve
+  out.reserve(commands_.size() * 20);
 
-  real feedrate = 0.0;
+  real feedrate = cfg.defaults.feedrate.z;
   real print_accel = cfg.defaults.acceleration.max_element();
   real travel_accel = cfg.defaults.acceleration.max_element();
   real retract_accel = cfg.defaults.extrusion_acceleration;
   vector3<> acceleration = cfg.defaults.acceleration;
-  vector3<> jerk;
-  real extrude_jerk = 0.0;
+  vector3<> jerk = cfg.defaults.jerk;
+  real extrude_jerk = cfg.defaults.extrusion_jerk;
   std::unordered_map<uint, uint> extruder_temp;
   std::unordered_map<uint, uint> bed_temp;
   std::unordered_map<uint, uint> fan_speeds;
@@ -716,7 +720,7 @@ std::vector<gcgg::command *> gcode::process(const config & __restrict cfg) const
   printf("Calculating Motion\n");
   for (auto * __restrict seg : out)
   {
-    seg->compute_motion();
+    seg->compute_motion(cfg, false);
   }
 
   if (cfg.arc.generate && out.size() >= 2)
@@ -1002,7 +1006,7 @@ std::vector<gcgg::command *> gcode::process(const config & __restrict cfg) const
   printf("Calculating Motion\n");
   for (auto * __restrict seg : out)
   {
-    seg->compute_motion();
+    seg->compute_motion(cfg, true);
   }
 
   return out;

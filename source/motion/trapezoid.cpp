@@ -25,14 +25,18 @@ motion::trapezoid::trapezoid(const data & __restrict init) :
 
   // Calculate how long to accelerate/decelerate to the appropriate speeds.
   const real ramp_times[2] = {
-    ramp_speed_diff[0] / linear_acceleration,
-    ramp_speed_diff[1] / linear_acceleration,
+    std::abs(ramp_speed_diff[0]) / linear_acceleration,
+    std::abs(ramp_speed_diff[1]) / linear_acceleration,
   };
 
   // Calculate the ramp distances
   const real ramp_distance[2] = {
-    (init.start_speed_ * ramp_times[0]) + (0.5 * linear_acceleration * (ramp_times[0] * ramp_times[0])),
-    (init.speed_ * ramp_times[1]) + (0.5 * linear_acceleration * (ramp_times[1] * ramp_times[1]))
+    ramp_times[0] ? 
+      (init.start_speed_ * ramp_times[0]) + (0.5 * linear_acceleration * (ramp_times[0] * ramp_times[0])) :
+      0,
+    ramp_times[1] ?
+      (init.speed_ * ramp_times[1]) + (0.5 * linear_acceleration * (ramp_times[1] * ramp_times[1])) :
+      0
   };
 
   const real total_ramp_distance = ramp_distance[0] + ramp_distance[1];

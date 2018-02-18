@@ -2,12 +2,14 @@
 #include "gcode/gcode.hpp"
 #include "output/gcode/gcode_out.hpp"
 
+usize failed_jerk_tests = 0;
+
 int main(int argc, const char * const __restrict * const __restrict argv)
 {
   //static const char dummy_file[] = "C:\\Users\\mkuklinski\\Documents\\MSP_1-100 Tiger II-1.gcode";
   //static const char out_file[] = "C:\\Users\\mkuklinski\\Documents\\OPT_1-100 Tiger II-1.gcode";
-  static const char dummy_file[] = "H:\\MSP_1-100 Jagdpanther-late-schurzen-2.gcode";
-  static const char out_file[] = "H:\\OPT_1-100 Jagdpanther-late-schurzen-2.gcode";
+  static const char dummy_file[] = "D:\\MSP_1-100 Jagdpanther-late-schurzen-2.gcode";
+  static const char out_file[] = "D:\\OPT_1-100 Jagdpanther-late-schurzen-2.gcode";
 
   gcode _gc = { dummy_file };
 
@@ -22,6 +24,8 @@ int main(int argc, const char * const __restrict * const __restrict argv)
 
   printf("Outputing...\n");
   output::write_gcode(out_file, commands, cfg);
+
+  printf("Failed Jerk Tests: %llu\n", failed_jerk_tests);
 
   return 0;
 }

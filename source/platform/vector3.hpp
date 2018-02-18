@@ -56,7 +56,7 @@ namespace gcgg
       {
         // Technically, going _to_ zero is also an inversion as you cannot generate scaling values
         // to zero or across zero.
-        return ((a < -0.0) && (b < -0.0)) || ((a > 0.0) && (b > 0.0));
+        return ((a <= -0.0) && (b <= -0.0)) || ((a >= 0.0) && (b >= 0.0));
       };
 
       return !same_sign(x, vec.x) || !same_sign(y, vec.y) || !same_sign(z, vec.z);

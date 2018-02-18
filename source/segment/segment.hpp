@@ -16,6 +16,7 @@ namespace gcgg::segments
     virtual bool is_instruction() const __restrict override final { return false; }
 
   public: // make private when I feel like it.
+    bool from_arc_ = false;
     segment * prev_segment_ = nullptr;
     segment * next_segment_ = nullptr;
 

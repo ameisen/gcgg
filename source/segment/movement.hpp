@@ -1,6 +1,7 @@
 #pragma once
 
 #include "segment.hpp"
+#include "motion/trapezoid.hpp"
 
 namespace gcgg::segments
 {
@@ -13,7 +14,12 @@ namespace gcgg::segments
     real feedrate_ = 0.0;
   public:
     movement(uint64 type) : segment(type) {}
-    virtual ~movement() {}
+    virtual ~movement() {
+      if (trapezoid_)
+      {
+        delete trapezoid_;
+      }
+    }
 
     void set_positions(const vector3<> & __restrict start, const vector3<> & __restrict end) __restrict
     {
@@ -74,7 +80,7 @@ namespace gcgg::segments
       start_position_ = position;
     }
 
-    virtual void compute_motion() __restrict override;
+    virtual void compute_motion(const config & __restrict cfg, bool require_jerk) __restrict override;
 
     virtual vector3<> get_velocity() const __restrict { return (end_position_ - start_position_).normalized(feedrate_); }
 
@@ -86,5 +92,6 @@ namespace gcgg::segments
     vector3<> jerk_hint_;
     real jerk_extrude_hint_ = 0.0;
     bool is_travel_ = false;
+    motion::trapezoid *trapezoid_ = nullptr;
   };
 }

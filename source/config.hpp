@@ -7,6 +7,7 @@ namespace gcgg
     struct
     {
       bool all_no_extrude_as_travel = true;
+      bool brute_force_feedrate = true;
     } options;
 
     struct
@@ -18,11 +19,12 @@ namespace gcgg
     {
       bool generate = true;
       bool constant_speed = true; // Should the arc only allow a constant speed across it?
-      real min_angle = 0.0; // 45 degrees
+      //usize max_segments = 16;
+      real max_angle = 150.0;
+      real min_angle = 1.0; // 45 degrees
       real radius = 0.1; // The radius of the circle of the arc. Also equal to how much of a linear segment is 'cut off' from the corner.
       real travel_radius = 5.0; // Travels can have a much larger radius.
       real min_radius = 0.05; // might need to be smaller... or larger.
-      real gcode_segment_modulus = 45.0; // per angle difference, how many subdivisions to generate. // Values > 180 guarantee that all arcs will generate a single linear segment.
     } arc;
 
     enum class format
@@ -43,6 +45,10 @@ namespace gcgg
     {
       vector3<> acceleration = { 2000, 1500, 400 };
       real extrusion_acceleration = 4000;
+      vector3<> feedrate = vector3<>{200.0, 150.0, 80.0} * 60.0;
+      real extrusion_feedrate = 200 * 60;
+      vector3<> jerk = { 20, 20, 20 };
+      real extrusion_jerk = 20;
     } defaults;
   };
 }

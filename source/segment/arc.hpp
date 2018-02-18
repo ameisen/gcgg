@@ -113,12 +113,14 @@ namespace gcgg::segments
 
     std::vector<gcgg::command *> generate_segments(const config & __restrict cfg) const __restrict
     {
+      // TODO validate segments against a jerk test, and subdivide further if the jerk test fails.
+
       std::vector<gcgg::command *> out;
 
       const vector3<> center_point = (start_position_ + end_position_) * 0.5;
       const vector3<> arc_origin = corner_ + ((center_point - corner_) * 2.0); // TODO needs to be adjusted for ovaloid arcs.
 
-      const uint subdivisions = std::max(uint(std::round((angle_ / cfg.arc.gcode_segment_modulus)) + 0.5), 0u);
+      //const uint subdivisions = std::max(uint(std::round((angle_ / cfg.arc.gcode_segment_modulus)) + 0.5), 0u);
 
       struct segment final
       {
@@ -128,10 +130,30 @@ namespace gcgg::segments
 
       std::vector<segment> segments = { { start_position_, end_position_ } };
 
-      for (uint i = 0; i < subdivisions; ++i)
+      const vector3<> start_vector = (corner_ - start_position_).normalized();
+      const vector3<> end_vector = (end_position_ - corner_).normalized();
+
+      const auto get_current_angle = [&]() -> real
+      {
+        const real angle = std::acos(start_vector.dot((segments[0].end - segments[0].start).normalized())) * 57.2958;
+        return angle;
+      };
+
+      const auto angle_between = [](const segment & __restrict a, const segment & __restrict b) -> real
+      {
+        const vector3<> vec_a = (a.end - a.start).normalized();
+        const vector3<> vec_b = (b.end - b.start).normalized();
+        return std::acos(vec_a.dot(vec_b)) * 57.2958;
+      };
+
+      const real min_segment_angle = cfg.arc.min_angle;
+
+      while (angle_ < cfg.arc.max_angle && get_current_angle() >= cfg.arc.min_angle/* && segments.size() < cfg.arc.max_segments*/)
       {
         std::vector<segment> new_segments;
         new_segments.reserve(segments.size() * 2);
+
+        bool added_segments = false;
 
         for (const segment & __restrict seg : segments)
         {
@@ -149,7 +171,10 @@ namespace gcgg::segments
             vector3<> arc_position = arc_origin + segment_vector;
 
             // Generate two segments from this.
-            if (is_equal(seg.start.distance(arc_position), 0.0) || is_equal(seg.end.distance(arc_position), 0.0))
+            bool valid_segments = !is_equal(seg.start.distance(arc_position), 0.0) && !is_equal(seg.end.distance(arc_position), 0.0);
+            valid_segments = valid_segments && (angle_between({ seg.start, arc_position }, { arc_position, seg.end }) >= min_segment_angle);
+
+            if (!valid_segments)
             {
               new_segments.push_back(seg);
             }
@@ -157,8 +182,14 @@ namespace gcgg::segments
             {
               new_segments.push_back({ seg.start, arc_position });
               new_segments.push_back({ arc_position, seg.end });
+              added_segments = true;
             }
           }
+        }
+
+        if (!added_segments)
+        {
+          break;
         }
 
         segments = std::move(new_segments);
@@ -256,6 +287,8 @@ namespace gcgg::segments
           new_seg = s;
         }
 
+        new_seg->from_arc_ = true;
+
         out.push_back(new_seg);
       }
 
@@ -332,7 +365,7 @@ namespace gcgg::segments
         return;
       }
 
-      const uint subdivisions = std::max(uint(std::round((angle_ / cfg.arc.gcode_segment_modulus)) + 0.5), 0u);
+      const uint subdivisions = std::max(uint(std::round((angle_ / cfg.arc.min_angle)) + 0.5), 0u);
 
       struct segment final
       {
@@ -597,7 +630,7 @@ namespace gcgg::segments
       out += " ; arc\n";
     }
 
-    virtual void compute_motion() __restrict override final
+    virtual void compute_motion(const config & __restrict cfg, bool require_jerk) __restrict override final
     {
     }
   };
