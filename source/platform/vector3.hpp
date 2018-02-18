@@ -159,6 +159,7 @@ namespace gcgg
       x *= val;
       y *= val;
       z *= val;
+      return *this;
     }
 
     constexpr vector3 & operator /= (real val) __restrict
@@ -166,6 +167,7 @@ namespace gcgg
       x /= val;
       y /= val;
       z /= val;
+      return *this;
     }
 
     constexpr vector3 & operator %= (real val) __restrict
