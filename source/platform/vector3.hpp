@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cmath>
+#include <algorithm>
 
 namespace gcgg
 {
@@ -28,6 +29,16 @@ namespace gcgg
     constexpr vector3(const T(&__restrict data)[3]) : vector3(data[0], data[1], data[2]) {}
     constexpr vector3(const vector3 & __restrict data) : vector3(data.x, data.y, data.z) {}
 
+    constexpr T min_element() const __restrict
+    {
+      return std::min(x, std::min(y, z));
+    }
+
+    constexpr T max_element() const __restrict
+    {
+      return std::max(x, std::max(y, z));
+    }
+
     constexpr T length_sq() const __restrict
     {
       return x * x + y * y + z * z;
@@ -45,6 +56,15 @@ namespace gcgg
       x *= current_magnitude_recip;
       y *= current_magnitude_recip;
       z *= current_magnitude_recip;
+    }
+
+    constexpr vector3 limit(const vector3 &__restrict vec) const __restrict
+    {
+      return {
+        std::min(x, vec.x),
+        std::min(y, vec.y),
+        std::min(z, vec.z)
+      };
     }
 
     constexpr vector3 normalized(T magnitude = 1.0) const __restrict
@@ -141,14 +161,14 @@ namespace gcgg
       z *= val;
     }
 
-    constexpr vector3 & operator /= (real va) __restrict
+    constexpr vector3 & operator /= (real val) __restrict
     {
       x /= val;
       y /= val;
       z /= val;
     }
 
-    constexpr vector3 & operator %= (real va) __restrict
+    constexpr vector3 & operator %= (real val) __restrict
     {
       x = std::fmod(x, val);
       y = std::fmod(y, val);
