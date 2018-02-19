@@ -41,6 +41,18 @@ namespace gcgg
     return std::abs(A - B) < epsilon;
   }
 
+  template <typename T>
+  static T lerp(const T & __restrict x, const T & __restrict y, real s)
+  {
+    return x + s * (y - x);
+  }
+
+  template <typename T>
+  static real delerp(const T & __restrict x, const T & __restrict y, const T & __restrict v)
+  {
+    return (x - v) / (x - y);
+  }
+
   static const char * trim_float(char *buffer)
   {
     usize len = strlen(buffer);

@@ -723,6 +723,12 @@ std::vector<gcgg::command *> gcode::process(const config & __restrict cfg) const
     seg->compute_motion(cfg, false);
   }
 
+  if (cfg.smoothing.enable && out.size() >= 2)
+  {
+    printf("Smoothing surface...\n");
+
+  }
+
   if (cfg.arc.generate && out.size() >= 2)
   {
     usize generated_arcs = 0;
@@ -824,7 +830,18 @@ std::vector<gcgg::command *> gcode::process(const config & __restrict cfg) const
 
       const bool is_travel = prev_segment_cmd->is_travel_ && cur_segment_cmd->is_travel_;
 
-      double arc_radius = is_travel ? cfg.arc.travel_radius : cfg.arc.radius;
+      double arc_radius;
+      if (is_travel && cfg.arc.halve_travels)
+      {
+        arc_radius = std::min(
+          prev_segment_cmd->get_vector().length() / 2,
+          cur_segment_cmd->get_vector().length() / 2
+        );
+      }
+      else
+      {
+        arc_radius = is_travel ? cfg.arc.travel_radius : cfg.arc.radius;
+      }
 
       // TODO in reality we should be generating ovaloid arcs, to handle differences in velocity.
 

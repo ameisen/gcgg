@@ -5,16 +5,16 @@ extern usize failed_jerk_tests;
 
 void segments::movement::compute_motion(const config & __restrict cfg, bool require_jerk) __restrict
 {
-  motion::trapezoid::data trap_data;
-  trap_data.acceleration_ = acceleration_;
-  trap_data.end_position_ = end_position_;
-  trap_data.start_position_ = start_position_;
-  trap_data.jerk_ = jerk_hint_;
-  trap_data.speed_ = feedrate_;
-  trap_data.end_speed_ = (next_segment_) ? (next_segment_->get_velocity().length()) : 0;
-  trap_data.start_speed_ = (prev_segment_) ? prev_segment_->motion_data_.exit_feedrate_ : 0;
-
-  trapezoid_ = new motion::trapezoid{ trap_data };
+  //motion::trapezoid::data trap_data;
+  //trap_data.acceleration_ = acceleration_;
+  //trap_data.end_position_ = end_position_;
+  //trap_data.start_position_ = start_position_;
+  //trap_data.jerk_ = jerk_hint_;
+  //trap_data.speed_ = feedrate_;
+  //trap_data.end_speed_ = (next_segment_) ? (next_segment_->get_velocity().length()) : 0;
+  //trap_data.start_speed_ = (prev_segment_) ? prev_segment_->motion_data_.exit_feedrate_ : 0;
+  //
+  //trapezoid_ = new motion::trapezoid{ trap_data };
 
   // Calculate feedrates and trapezoidal motion data.
   const vector3<> in_velocity = (prev_segment_) ? (prev_segment_->get_vector().normalized(prev_segment_->motion_data_.exit_feedrate_)) : vector3<>::zero;
