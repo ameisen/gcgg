@@ -165,21 +165,17 @@ namespace gcgg::segments
         // Calculate the max angle of the segments, which may not be equivalent.
         real largest_angle = 0.0;
         
-        printf("Arc Angles:\n");
-
         vector3<> cur_vector = (corner_ - start_position_).normalized();
         for (const segment & __restrict seg : segments)
         {
           const vector3<> seg_vector = (seg.end - seg.start).normalized();
           const real angle = std::acos(cur_vector.dot(seg_vector)) * 57.2958;
-          printf("%f\n", angle);
           largest_angle = std::max(largest_angle, angle);
 
           cur_vector = seg_vector;
         }
         const vector3<> seg_vector = (end_position_ - corner_).normalized();
         const real angle = std::acos(cur_vector.dot(seg_vector)) * 57.2958;
-        printf("%f\n", angle);
         largest_angle = std::max(largest_angle, angle);
 
         return largest_angle;
