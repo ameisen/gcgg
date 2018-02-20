@@ -120,8 +120,22 @@ namespace gcgg::segments
       const vector3<> center_point = (start_position_ + end_position_) * 0.5;
       const vector3<> arc_origin = corner_ + ((center_point - corner_) * 2.0); // TODO needs to be adjusted for ovaloid arcs.
 
+      // TODO something here still isn't right, as the radius' we get aren't correct for our angles all the time.
+
       const real arc_radius = radius_;
-      const real arc_constrain = std::min(arc_radius, corner_.distance(arc_origin));
+      real arc_constrain = corner_.distance(arc_origin);
+
+      if (angle_ <= 90.0)
+      {
+        const real angle_temp = angle_ / 90.0;
+        arc_constrain = slerp(0.0, arc_radius, angle_temp);
+      }
+      else
+      {
+        const real angle_temp = (angle_ - 90) / 90.0;
+        arc_constrain = lerp(arc_radius, arc_constrain, pow(angle_temp, 3.0));
+      }
+
       const vector3<> arc_center_point = arc_origin + (corner_ - arc_origin).normalized(arc_constrain);
 
       struct segment final
@@ -151,17 +165,21 @@ namespace gcgg::segments
         // Calculate the max angle of the segments, which may not be equivalent.
         real largest_angle = 0.0;
         
+        printf("Arc Angles:\n");
+
         vector3<> cur_vector = (corner_ - start_position_).normalized();
         for (const segment & __restrict seg : segments)
         {
           const vector3<> seg_vector = (seg.end - seg.start).normalized();
           const real angle = std::acos(cur_vector.dot(seg_vector)) * 57.2958;
+          printf("%f\n", angle);
           largest_angle = std::max(largest_angle, angle);
 
-          cur_vector = seg.end;
+          cur_vector = seg_vector;
         }
         const vector3<> seg_vector = (end_position_ - corner_).normalized();
         const real angle = std::acos(cur_vector.dot(seg_vector)) * 57.2958;
+        printf("%f\n", angle);
         largest_angle = std::max(largest_angle, angle);
 
         return largest_angle;
@@ -218,17 +236,14 @@ namespace gcgg::segments
           }
           else
           {
-            vector3<> segment_vector = (segment_center - arc_origin).normalized();
-            real radius = radius_;
+            real radius = arc_radius;
 
             if (cfg.arc.constrain_radius)
             {
-              radius = lerp(radius_, arc_constrain, test_segment_offset);
+              radius = slerp(arc_radius, arc_constrain, test_segment_offset);
             }
 
-            segment_vector *= radius;
-
-            vector3<> arc_position = arc_origin + segment_vector;
+            const vector3<> arc_position = arc_origin + (segment_center - arc_origin).normalized(radius);
 
             // Generate two segments from this.
             bool valid_segments = !is_equal(seg.start.distance(arc_position), 0.0) && !is_equal(seg.end.distance(arc_position), 0.0);
@@ -269,6 +284,10 @@ namespace gcgg::segments
 
         segments = std::move(new_segments);
       }
+
+      // TODO rmeove me
+      // This is here only for debugging purposes so we can sample arc angles.
+      get_current_angle();
 
       real total_arc_length = 0.0;
       const real original_length[2] = {

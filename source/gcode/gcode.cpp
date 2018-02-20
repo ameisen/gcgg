@@ -762,7 +762,7 @@ std::vector<gcgg::command *> gcode::process(const config & __restrict cfg) const
         return false;
       };
 
-      if (!is_move(prev_cmd))
+      if (!is_move(prev_cmd) || cur_cmd->is_delay())
       {
         prev_iter = iter++;
         continue;
@@ -770,7 +770,6 @@ std::vector<gcgg::command *> gcode::process(const config & __restrict cfg) const
 
       if (!is_move(cur_cmd))
       {
-        bool external_break = false;
         // If the current command is not a movement command, we might need to just increment iter until
         // we either find one, or we hit a delay instruction, as there might be non-moves between our moves
         // that are inconsequential.
@@ -799,7 +798,7 @@ std::vector<gcgg::command *> gcode::process(const config & __restrict cfg) const
         break;
       continue_exec:;
 
-        if (!is_move(cur_cmd))
+        if (!is_move(cur_cmd) || cur_cmd->is_delay())
         {
           prev_iter = iter++;
           continue;
@@ -1023,7 +1022,7 @@ std::vector<gcgg::command *> gcode::process(const config & __restrict cfg) const
   printf("Calculating Motion\n");
   for (auto * __restrict seg : out)
   {
-    seg->compute_motion(cfg, true);
+    //seg->compute_motion(cfg, true);
   }
 
   return out;

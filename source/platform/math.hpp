@@ -48,6 +48,12 @@ namespace gcgg
   }
 
   template <typename T>
+  static T slerp(const T & __restrict x, const T & __restrict y, real s)
+  {
+    return x + sqrt(s) * (y - x);
+  }
+
+  template <typename T>
   static real delerp(const T & __restrict x, const T & __restrict y, const T & __restrict v)
   {
     return (x - v) / (x - y);

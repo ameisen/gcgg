@@ -16,7 +16,10 @@ namespace gcgg::segments
     real feedrate_ = 0.0;
 
   public:
-    extrusion() : movement(type) {}
+    extrusion() : movement(type)
+    {
+      delay_ = true;
+    }
     virtual ~extrusion() {}
 
     void set_extrude(real extrude) __restrict
