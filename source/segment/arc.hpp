@@ -209,7 +209,7 @@ namespace gcgg::segments
             angle_between(seg, next_segment)
           );
 
-          const bool valid_angle = max_angle < (cfg.arc.min_angle * 0.5);
+          const bool valid_angle = max_angle < cfg.arc.min_angle;
 
           if (valid_angle || is_equal(segment_center.distance(arc_origin), 0.0))
           {
