@@ -286,6 +286,7 @@ namespace gcgg::segments
       get_current_angle();
 
       real total_arc_length = 0.0;
+      vector3<> arc_length_elements;
       const real original_length[2] = {
         start_position_.distance(corner_),
         end_position_.distance(corner_)
@@ -294,6 +295,7 @@ namespace gcgg::segments
       for (const segment & __restrict seg : segments)
       {
         total_arc_length += seg.start.distance(seg.end);
+        arc_length_elements += (seg.end - seg.start).abs();
       }
 
       // Calculate new feedrate.
@@ -305,16 +307,47 @@ namespace gcgg::segments
       const vector3<> in_velocity = (corner_ - start_position_).normalized(seg_feedrate_[0]);
       const vector3<> out_velocity = (end_position_ - corner_).normalized(seg_feedrate_[1]);
       const vector3<> velocity_diff = (out_velocity - in_velocity).abs();
-      const vector3<> element_times =
-      // v = v0 + a * t
-      // v - v0 = at
-      // (v - v0) / a = t
-        velocity_diff / mean_acceleration // TODO maybe use per-axis acceleration?
-      ;
+      // We need to solve v = at and d = vt for t... and v.
+      // Two Equations:
+      // T = -(sqrt(d) / sqrt(a))  V = -(sqrt(a) * sqrt(d))
+      // T = (sqrt(d) / sqrt(a))  V = (sqrt(a) * sqrt(d))
+      // The one that is positive is correct.
+      vector3<> element_times = {
+        std::sqrt(arc_length_elements.x) / std::sqrt(mean_acceleration),
+        std::sqrt(arc_length_elements.y) / std::sqrt(mean_acceleration),
+        std::sqrt(arc_length_elements.z) / std::sqrt(mean_acceleration)
+      };
+
+      vector3<> v_multiplier = { 1, 1, 1 };
+
+      if (element_times.x < 0)
+      {
+        element_times.x = -element_times.x;
+        v_multiplier.x = -1;
+      }
+
+      if (element_times.y < 0)
+      {
+        element_times.y = -element_times.y;
+        v_multiplier.y = -1;
+      }
+
+      if (element_times.z < 0)
+      {
+        element_times.z = -element_times.z;
+        v_multiplier.z = -1;
+      }
+
+      const vector3<> element_velocities = {
+        v_multiplier.x * (std::sqrt(mean_acceleration) * std::sqrt(arc_length_elements.x)),
+        v_multiplier.y * (std::sqrt(mean_acceleration) * std::sqrt(arc_length_elements.y)),
+        v_multiplier.z * (std::sqrt(mean_acceleration) * std::sqrt(arc_length_elements.z))
+      };
+
       // TODO apply jerk
       const real accel_time = element_times.max_element();
       // TODO other calculations need to happen for other segments first.
-      const real new_feedrate = mean_feedrate;//  std::min(mean_feedrate, (total_arc_length / accel_time) * 60);
+      const real new_feedrate = std::min(mean_feedrate, element_velocities.length() * 60); // mean_feedrate;//  std::min(mean_feedrate, (total_arc_length / accel_time) * 60);
 
       const real total_arc_length_half = total_arc_length * 0.5;
 
