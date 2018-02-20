@@ -209,7 +209,7 @@ namespace gcgg::segments
             angle_between(seg, next_segment)
           );
 
-          const bool valid_angle = max_angle < cfg.arc.min_angle;
+          const bool valid_angle = max_angle < (cfg.arc.min_angle * 0.5);
 
           if (valid_angle || is_equal(segment_center.distance(arc_origin), 0.0))
           {
@@ -298,7 +298,8 @@ namespace gcgg::segments
       ;
       // TODO apply jerk
       const real accel_time = element_times.max_element();
-      const real new_feedrate = std::min(mean_feedrate, (total_arc_length / accel_time) * 60);
+      // TODO other calculations need to happen for other segments first.
+      const real new_feedrate = mean_feedrate;//  std::min(mean_feedrate, (total_arc_length / accel_time) * 60);
 
       const real total_arc_length_half = total_arc_length * 0.5;
 
