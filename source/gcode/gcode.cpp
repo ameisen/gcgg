@@ -69,9 +69,14 @@ gcode::token_vector gcode::tokenize(const std::vector<char> &__restrict data)
 
   static constexpr const char comment_char = ';';
 
+  // Derived by testing with my files. Probably needs to be different for other real world files.
+  static constexpr const usize mean_token_length = 24;
+
   gcode::token_vector out;
+  out.reserve(data.size() / mean_token_length);
 
   command_token cmd_token;
+  cmd_token.reserve(10);
   std::string token;
   const auto push_token = [&]()
   {
@@ -133,6 +138,7 @@ std::vector<gc::command> gcode::parse(const gcode::token_vector & __restrict tok
   printf("Parsing tokens\n");
 
   std::vector<gc::command> out;
+  out.reserve(tokens.size());
 
   for (const auto & __restrict tv : tokens)
   {
@@ -176,6 +182,8 @@ std::vector<gcgg::command *> gcode::process(const config & __restrict cfg) const
 {
   printf("Processing...\n");
 
+  // Using a custom vector class would let use implement it using realloc which would likely be substantially faster.
+  // This, however, would add another mess of maintenence, so I'm not doing it, at least right now.
   std::vector<gcgg::command *> out;
   // Reserve
   out.reserve(commands_.size() * 20);
