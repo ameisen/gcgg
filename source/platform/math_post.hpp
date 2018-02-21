@@ -18,6 +18,13 @@ namespace gcgg
   }
 
   template <>
+  static bool is_zero<vector3<>>(const vector3<> & __restrict A, const vector3<> & __restrict epsilon)
+  {
+    const vector3<> result = A.abs();
+    return result.x < epsilon.x && result.y < epsilon.y && result.z < epsilon.z;
+  }
+
+  template <>
   static real delerp<vector3<real>>(const vector3<real> & __restrict x, const vector3<real> & __restrict y, const vector3<real> & __restrict v)
   {
     vector3<> a = (x - v);

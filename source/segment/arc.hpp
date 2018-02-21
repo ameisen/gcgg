@@ -22,9 +22,252 @@ namespace gcgg::segments
     vector3<> corner_;
     real radius_;
     real angle_;
-
+    vector3<> arc_origin_;
+    
   public:
     vector3<> parent_velocities_[2];
+
+  private:
+    struct segment final
+    {
+      vector3<> start;
+      vector3<> end;
+
+      real linear_offset = 1.0;
+
+      vector3<> get_vector(real magnitude = 1.0) const __restrict
+      {
+        return (end - start).normalized(magnitude);
+      }
+
+      real angle_between(const segment & __restrict seg) const __restrict
+      {
+        const vector3<> vec_a = (end - start).normalized();
+        const vector3<> vec_b = (seg.end - seg.start).normalized();
+        return vec_a.angle_between(vec_b);
+      }
+    };
+
+    struct segment_data final
+    {
+      std::vector<segment> segments_;
+      real feedrate_;
+      real length_;
+      array<real, 2> extrusion_;
+      real acceleration_;
+      vector3<> jerk_;
+      real extrude_jerk_;
+    };
+
+    // high_precision forces very small subsegments, for calculation of arcs for arc instruction emission.
+    // Should not be used when subdividing arcs.
+    segment_data get_segments_ (const config & __restrict cfg, bool high_precision = false) const __restrict
+    {
+      // TODO validate segments against a jerk test, and subdivide further if the jerk test fails.
+
+      const vector3<> center_point = mean(start_position_ + end_position_);
+      const vector3<> arc_origin = arc_origin_;
+
+      // TODO something here still isn't right, as the radius' we get aren't correct for our angles all the time.
+
+      const real arc_radius = radius_;
+      real arc_constrain = corner_.distance(arc_origin);
+
+      if (angle_ <= 90.0)
+      {
+        const real angle_temp = angle_ / 90.0;
+        arc_constrain = slerp(0.0, arc_radius, angle_temp);
+      }
+      else
+      {
+        const real angle_temp = (angle_ - 90) / 90.0;
+        arc_constrain = lerp(arc_radius, arc_constrain, pow(angle_temp, 3.0));
+      }
+
+      const vector3<> arc_center_point = arc_origin + (corner_ - arc_origin).normalized(arc_constrain);
+
+      std::vector<segment> segments = { { start_position_, end_position_ } };
+
+      const vector3<> start_vector = (corner_ - start_position_).normalized();
+      const vector3<> end_vector = (end_position_ - corner_).normalized();
+
+      const auto get_current_angle = [&]() -> real
+      {
+        // Calculate the max angle of the segments, which may not be equivalent.
+        real largest_angle = 0.0;
+
+        vector3<> cur_vector = (corner_ - start_position_).normalized();
+        for (const segment & __restrict seg : segments)
+        {
+          const vector3<> seg_vector = (seg.end - seg.start).normalized();
+          const real angle = cur_vector.angle_between(seg_vector);
+          largest_angle = max(largest_angle, angle);
+
+          cur_vector = seg_vector;
+        }
+        const vector3<> seg_vector = (end_position_ - corner_).normalized();
+        const real angle = cur_vector.angle_between(seg_vector);
+        largest_angle = max(largest_angle, angle);
+
+        return largest_angle;
+      };
+
+      // For high precision, let's just use 1 degree as the target angle for now. Probably more precise than needed,
+      // might cause slowdowns in the compiler. Can adjust later.
+      static constexpr const real hp_angle = 1.0;
+      const real min_angle = high_precision ? hp_angle : cfg.arc.min_angle;
+
+      std::vector<segment> new_segments;
+      while (angle_ < cfg.arc.max_angle && get_current_angle() >= min_angle && segments.size() < cfg.arc.max_segments)
+      {
+        new_segments.clear();
+        new_segments.reserve(segments.size() * 2);
+
+        bool added_segments = false;
+
+        real current_segment_offset = 0.0;
+
+        usize i = 0;
+        segment prev_segment = { start_position_, corner_ };
+        for (const segment & __restrict seg : segments)
+        {
+          const real test_segment_offset = (segments.size() == 1) ? 1.0 : (current_segment_offset + (seg.linear_offset * 0.5));
+          current_segment_offset += seg.linear_offset;
+          assert(current_segment_offset <= 1.0);
+          assert(test_segment_offset <= 1.0);
+
+          segment next_segment = (i == segments.size() - 1) ?
+            segment{ corner_, end_position_ } :
+            segments[i + 1];
+
+          // Every segment here will get split in twain.
+          vector3<> segment_center = mean(seg.start + seg.end);
+          // We need to renormalize this center position around the arc origin.
+
+          // Get the angle to and from this segment, to see if it needs to be subdivided.
+          const real max_angle = max(
+            prev_segment.angle_between(seg),
+            seg.angle_between(next_segment)
+          );
+
+          const bool valid_angle = max_angle < min_angle;
+
+          if (valid_angle || is_zero(segment_center.distance(arc_origin)))
+          {
+            new_segments.push_back(seg);
+            prev_segment = seg;
+          }
+          else
+          {
+            real radius = arc_radius;
+
+            if (cfg.arc.constrain_radius)
+            {
+              radius = slerp(arc_radius, arc_constrain, test_segment_offset);
+            }
+
+            const vector3<> arc_position = arc_origin + (segment_center - arc_origin).normalized(radius);
+
+            // Generate two segments from this.
+            bool valid_segments = !is_zero(seg.start.distance(arc_position)) && !is_zero(seg.end.distance(arc_position));
+            //valid_segments = valid_segments && (angle_between({ seg.start, arc_position }, { arc_position, seg.end }) >= min_segment_angle);
+
+            if (!valid_segments)
+            {
+              new_segments.push_back(seg);
+              prev_segment = seg;
+            }
+            else
+            {
+              if (segments.size() != 1)
+              {
+                new_segments.push_back({ seg.start, arc_position });
+                new_segments.back().linear_offset = seg.linear_offset * 0.5;
+                new_segments.push_back({ arc_position, seg.end });
+                new_segments.back().linear_offset = seg.linear_offset * 0.5;
+              }
+              else
+              {
+                new_segments.push_back({ seg.start, arc_position });
+                new_segments.back().linear_offset = 1.0;
+                new_segments.push_back({ arc_position, seg.end });
+                new_segments.back().linear_offset = -1.0;
+              }
+              added_segments = true;
+              prev_segment = new_segments.back();
+            }
+          }
+          ++i;
+        }
+
+        if (!added_segments)
+        {
+          break;
+        }
+
+        std::swap(segments, new_segments); // Swapping instead of scoping-out and recreating can help limit allocations a bit.
+      }
+
+      real total_arc_length = 0.0;
+      vector3<> arc_length_elements;
+      const real original_length[2] = {
+        start_position_.distance(corner_),
+        end_position_.distance(corner_)
+      };
+
+      for (const segment & __restrict seg : segments)
+      {
+        total_arc_length += seg.start.distance(seg.end);
+        arc_length_elements += (seg.end - seg.start).abs();
+      }
+
+      // Calculate new feedrate.
+      const real mean_feedrate = mean(seg_feedrate_[0] + seg_feedrate_[1]);
+      const real mean_acceleration = mean(acceleration_[0] + acceleration_[1]);
+      const vector3<> mean_jerk = mean(jerk_[0] + jerk_[1]);
+
+      const vector3<> in_velocity = (corner_ - start_position_).normalized(seg_feedrate_[0]);
+      const vector3<> out_velocity = (end_position_ - corner_).normalized(seg_feedrate_[1]);
+      //const vector3<> velocity_diff = (out_velocity - in_velocity).abs();
+
+      // We need to solve v = at and d = vt for t... and v.
+      // Two Equations:
+      // T = -(sqrt(d) / sqrt(a))  V = -(sqrt(a) * sqrt(d))
+      // T = (sqrt(d) / sqrt(a))  V = (sqrt(a) * sqrt(d))
+      // The one that is positive is correct.
+      const vector3<> element_times = {
+        std::abs(std::sqrt(arc_length_elements.x) / std::sqrt(mean_acceleration)),
+        std::abs(std::sqrt(arc_length_elements.y) / std::sqrt(mean_acceleration)),
+        std::abs(std::sqrt(arc_length_elements.z) / std::sqrt(mean_acceleration))
+      };
+
+      const vector3<> element_velocities = {
+        std::abs(std::sqrt(mean_acceleration) * std::sqrt(arc_length_elements.x)),
+        std::abs(std::sqrt(mean_acceleration) * std::sqrt(arc_length_elements.y)),
+        std::abs(std::sqrt(mean_acceleration) * std::sqrt(arc_length_elements.z))
+      };
+
+      // TODO apply jerk
+      // TODO other calculations need to happen for other segments first.
+
+      // Feedrate is per minute, so result must be multiplied by 60 as the result is per second.
+      const real new_feedrate = min(mean_feedrate, element_velocities.length() * 60.0); // mean_feedrate;//  std::min(mean_feedrate, (total_arc_length / accel_time) * 60);
+
+      const real adusted_extrusions[2] = {
+        extrude_[0] * ((total_arc_length * 0.5) / original_length[0]),
+        extrude_[1] * ((total_arc_length * 0.5) / original_length[1])
+      };
+
+      return {
+        segments,
+        mean_feedrate,
+        total_arc_length,
+        { adusted_extrusions[0], adusted_extrusions[1] },
+        mean_acceleration,
+        mean_jerk,
+        mean(extrude_jerk_[0] + extrude_jerk_[1])
+      };
+    }
 
   public:
     real get_feedrate_element(usize i) const __restrict
@@ -89,9 +332,12 @@ namespace gcgg::segments
         jerk_[0].z = jerk_[1].z;
       }
 
-      acceleration_hint_ = (acceleration_[0] + acceleration_[1]) * 0.5;
-      jerk_hint_ = (jerk_[0] + jerk_[1]) * 0.5;
-      jerk_extrude_hint_ = (extrude_jerk_[0] + extrude_jerk_[1]) * 0.5;
+      acceleration_hint_ = mean(acceleration_[0] + acceleration_[1]);
+      jerk_hint_ = mean(jerk_[0] + jerk_[1]);
+      jerk_extrude_hint_ = mean(extrude_jerk_[0] + extrude_jerk_[1]);
+
+      const vector3<> center_point = mean(start_position_ + end_position_);
+      arc_origin_ = corner_ + ((center_point - corner_) * 2.0); // TODO needs to be adjusted for ovaloid arcs.
     }
     arc() : movement(type) {}
     virtual ~arc() {}
@@ -113,248 +359,12 @@ namespace gcgg::segments
 
     std::vector<gcgg::command *> generate_segments(const config & __restrict cfg) const __restrict
     {
-      // TODO validate segments against a jerk test, and subdivide further if the jerk test fails.
-
       std::vector<gcgg::command *> out;
 
-      const vector3<> center_point = (start_position_ + end_position_) * 0.5;
-      const vector3<> arc_origin = corner_ + ((center_point - corner_) * 2.0); // TODO needs to be adjusted for ovaloid arcs.
+      const segment_data segdata = get_segments_(cfg);
+      const std::vector<segment> & __restrict segments = segdata.segments_;
 
-      // TODO something here still isn't right, as the radius' we get aren't correct for our angles all the time.
-
-      const real arc_radius = radius_;
-      real arc_constrain = corner_.distance(arc_origin);
-
-      if (angle_ <= 90.0)
-      {
-        const real angle_temp = angle_ / 90.0;
-        arc_constrain = slerp(0.0, arc_radius, angle_temp);
-      }
-      else
-      {
-        const real angle_temp = (angle_ - 90) / 90.0;
-        arc_constrain = lerp(arc_radius, arc_constrain, pow(angle_temp, 3.0));
-      }
-
-      const vector3<> arc_center_point = arc_origin + (corner_ - arc_origin).normalized(arc_constrain);
-
-      struct segment final
-      {
-        vector3<> start;
-        vector3<> end;
-
-        real linear_offset = 1.0;
-      
-        vector3<> get_vector(real magnitude = 1.0) const __restrict
-        {
-          return (end - start).normalized(magnitude);
-        }
-      };
-
-      std::vector<segment> segments = { { start_position_, end_position_ } };
-
-      const vector3<> start_vector = (corner_ - start_position_).normalized();
-      const vector3<> end_vector = (end_position_ - corner_).normalized();
-
-      const auto get_current_angle = [&]() -> real
-      {
-        /*
-        const real angle = std::acos(start_vector.dot((segments[0].end - segments[0].start).normalized())) * 57.2958;
-        return angle;
-        */
-        // Calculate the max angle of the segments, which may not be equivalent.
-        real largest_angle = 0.0;
-        
-        vector3<> cur_vector = (corner_ - start_position_).normalized();
-        for (const segment & __restrict seg : segments)
-        {
-          const vector3<> seg_vector = (seg.end - seg.start).normalized();
-          const real angle = std::acos(cur_vector.dot(seg_vector)) * 57.2958;
-          largest_angle = std::max(largest_angle, angle);
-
-          cur_vector = seg_vector;
-        }
-        const vector3<> seg_vector = (end_position_ - corner_).normalized();
-        const real angle = std::acos(cur_vector.dot(seg_vector)) * 57.2958;
-        largest_angle = std::max(largest_angle, angle);
-
-        return largest_angle;
-      };
-
-      const auto angle_between = [](const segment & __restrict a, const segment & __restrict b) -> real
-      {
-        const vector3<> vec_a = (a.end - a.start).normalized();
-        const vector3<> vec_b = (b.end - b.start).normalized();
-        return std::acos(vec_a.dot(vec_b)) * 57.2958;
-      };
-
-      const real min_segment_angle = cfg.arc.min_angle * 0.5;
-      while (angle_ < cfg.arc.max_angle && get_current_angle() >= cfg.arc.min_angle && segments.size() < cfg.arc.max_segments)
-      {
-
-
-        std::vector<segment> new_segments;
-        new_segments.reserve(segments.size() * 2);
-
-        bool added_segments = false;
-
-        real current_segment_offset = 0.0;
-
-        usize i = 0;
-        segment prev_segment = { start_position_, corner_ };
-        for (const segment & __restrict seg : segments)
-        {
-          const real test_segment_offset = (segments.size() == 1) ? 1.0 : (current_segment_offset + (seg.linear_offset * 0.5));
-          current_segment_offset += seg.linear_offset;
-          assert(current_segment_offset <= 1.0);
-          assert(test_segment_offset <= 1.0);
-
-          segment next_segment = (i == segments.size() - 1) ?
-            segment{ corner_, end_position_ } :
-            segments[i + 1];
-
-          // Every segment here will get split in twain.
-          vector3<> segment_center = (seg.start + seg.end) * 0.5;
-          // We need to renormalize this center position around the arc origin.
-
-          // Get the angle to and from this segment, to see if it needs to be subdivided.
-          const real max_angle = std::max(
-            angle_between(prev_segment, seg),
-            angle_between(seg, next_segment)
-          );
-
-          const bool valid_angle = max_angle < cfg.arc.min_angle;
-
-          if (valid_angle || is_equal(segment_center.distance(arc_origin), 0.0))
-          {
-            new_segments.push_back(seg);
-            prev_segment = seg;
-          }
-          else
-          {
-            real radius = arc_radius;
-
-            if (cfg.arc.constrain_radius)
-            {
-              radius = slerp(arc_radius, arc_constrain, test_segment_offset);
-            }
-
-            const vector3<> arc_position = arc_origin + (segment_center - arc_origin).normalized(radius);
-
-            // Generate two segments from this.
-            bool valid_segments = !is_equal(seg.start.distance(arc_position), 0.0) && !is_equal(seg.end.distance(arc_position), 0.0);
-            //valid_segments = valid_segments && (angle_between({ seg.start, arc_position }, { arc_position, seg.end }) >= min_segment_angle);
-
-            if (!valid_segments)
-            {
-              new_segments.push_back(seg);
-              prev_segment = seg;
-            }
-            else
-            {
-              if (segments.size() != 1)
-              {
-                new_segments.push_back({ seg.start, arc_position });
-                new_segments.back().linear_offset = seg.linear_offset * 0.5;
-                new_segments.push_back({ arc_position, seg.end });
-                new_segments.back().linear_offset = seg.linear_offset * 0.5;
-              }
-              else
-              {
-                new_segments.push_back({ seg.start, arc_position });
-                new_segments.back().linear_offset = 1.0;
-                new_segments.push_back({ arc_position, seg.end });
-                new_segments.back().linear_offset = -1.0;
-              }
-              added_segments = true;
-              prev_segment = new_segments.back();
-            }
-          }
-          ++i;
-        }
-
-        if (!added_segments)
-        {
-          break;
-        }
-
-        segments = std::move(new_segments);
-      }
-
-      // TODO rmeove me
-      // This is here only for debugging purposes so we can sample arc angles.
-      get_current_angle();
-
-      real total_arc_length = 0.0;
-      vector3<> arc_length_elements;
-      const real original_length[2] = {
-        start_position_.distance(corner_),
-        end_position_.distance(corner_)
-      };
-
-      for (const segment & __restrict seg : segments)
-      {
-        total_arc_length += seg.start.distance(seg.end);
-        arc_length_elements += (seg.end - seg.start).abs();
-      }
-
-      // Calculate new feedrate.
-      const real mean_feedrate = (seg_feedrate_[0] + seg_feedrate_[1]) * 0.5;
-      const real mean_acceleration = (acceleration_[0] + acceleration_[1]) * 0.5;
-      const vector3<> mean_jerk = (jerk_[0] + jerk_[1]) * 0.5;
-
-      // Feedrate is per minute, so result must be multiplied by 60.
-      const vector3<> in_velocity = (corner_ - start_position_).normalized(seg_feedrate_[0]);
-      const vector3<> out_velocity = (end_position_ - corner_).normalized(seg_feedrate_[1]);
-      const vector3<> velocity_diff = (out_velocity - in_velocity).abs();
-      // We need to solve v = at and d = vt for t... and v.
-      // Two Equations:
-      // T = -(sqrt(d) / sqrt(a))  V = -(sqrt(a) * sqrt(d))
-      // T = (sqrt(d) / sqrt(a))  V = (sqrt(a) * sqrt(d))
-      // The one that is positive is correct.
-      vector3<> element_times = {
-        std::sqrt(arc_length_elements.x) / std::sqrt(mean_acceleration),
-        std::sqrt(arc_length_elements.y) / std::sqrt(mean_acceleration),
-        std::sqrt(arc_length_elements.z) / std::sqrt(mean_acceleration)
-      };
-
-      vector3<> v_multiplier = { 1, 1, 1 };
-
-      if (element_times.x < 0)
-      {
-        element_times.x = -element_times.x;
-        v_multiplier.x = -1;
-      }
-
-      if (element_times.y < 0)
-      {
-        element_times.y = -element_times.y;
-        v_multiplier.y = -1;
-      }
-
-      if (element_times.z < 0)
-      {
-        element_times.z = -element_times.z;
-        v_multiplier.z = -1;
-      }
-
-      const vector3<> element_velocities = {
-        v_multiplier.x * (std::sqrt(mean_acceleration) * std::sqrt(arc_length_elements.x)),
-        v_multiplier.y * (std::sqrt(mean_acceleration) * std::sqrt(arc_length_elements.y)),
-        v_multiplier.z * (std::sqrt(mean_acceleration) * std::sqrt(arc_length_elements.z))
-      };
-
-      // TODO apply jerk
-      const real accel_time = element_times.max_element();
-      // TODO other calculations need to happen for other segments first.
-      const real new_feedrate = std::min(mean_feedrate, element_velocities.length() * 60); // mean_feedrate;//  std::min(mean_feedrate, (total_arc_length / accel_time) * 60);
-
-      const real total_arc_length_half = total_arc_length * 0.5;
-
-      const real adusted_extrusions[2] = {
-        extrude_[0] * (total_arc_length_half / original_length[0]),
-        extrude_[1] * (total_arc_length_half / original_length[1])
-      };
+      const auto adusted_extrusions = segdata.extrusion_;
 
       out.reserve(segments.size());
 
@@ -365,9 +375,9 @@ namespace gcgg::segments
       {
         const real interpoland = real(iter++) / segments_divisor;
 
-        const real segment_mult = seg.start.distance(seg.end) / total_arc_length;
+        const real segment_mult = seg.start.distance(seg.end) / segdata.length_;
 
-        const real feedrate = new_feedrate;
+        const real feedrate = segdata.feedrate_;
         real extrusion;
         if (adusted_extrusions[0] == 0.0 && adusted_extrusions[1] != 0.0)
         {
@@ -398,9 +408,9 @@ namespace gcgg::segments
           // all else
           extrusion = (adusted_extrusions[0] + adusted_extrusions[1]) * segment_mult;
         }
-        const real acceleration = mean_acceleration;
-        const real extrude_jerk = (extrude_jerk_[0] + extrude_jerk_[1]) * 0.5;
-        const vector3<> jerk = mean_jerk;
+        const real acceleration = segdata.acceleration_;
+        const real extrude_jerk = segdata.extrude_jerk_;
+        const vector3<> jerk = segdata.jerk_;
 
         segments::segment * __restrict new_seg;
 
@@ -441,7 +451,10 @@ namespace gcgg::segments
       const vector3<> arc_origin = corner_ + ((center_point - corner_) * 2.0); // TODO needs to be adjusted for ovaloid arcs.
 
       const real arc_radius = radius_;
-      const real arc_constrain = std::min(arc_radius, center_point.distance(arc_origin));
+      const real arc_constrain = min(arc_radius, center_point.distance(arc_origin));
+
+      const segment_data segdata = get_segments_(cfg);
+      const std::vector<segment> & __restrict segments = segdata.segments_;
 
       if (cfg.output.generate_G15)
       {
@@ -507,144 +520,9 @@ namespace gcgg::segments
 
         return;
       }
-
-      const uint subdivisions = std::max(uint(std::round((angle_ / cfg.arc.min_angle)) + 0.5), 0u);
-
-      struct segment final
+      else
       {
-        vector3<> start;
-        vector3<> end;
-      };
-
-      std::vector<segment> segments = { {start_position_, end_position_} };
-
-      for (uint i = 0; i < subdivisions; ++i)
-      {
-        std::vector<segment> new_segments;
-        new_segments.reserve(segments.size() * 2);
-
-        for (const segment & __restrict seg : segments)
-        {
-          // Every segment here will get split in twain.
-          vector3<> segment_center = (seg.start + seg.end) * 0.5;
-          // We need to renormalize this center position around the arc origin.
-
-          if (is_equal(segment_center.distance(arc_origin), 0.0))
-          {
-            new_segments.push_back(seg);
-          }
-          else
-          {
-            // center_point
-            // segment_center
-            // start_position_
-            // end_position_
-
-            vector3<> segment_vector = (segment_center - arc_origin).normalized();
-            real radius = radius_;
-
-            if (cfg.arc.constrain_radius)
-            {
-              const real delerp_values[2] = {
-                delerp(start_position_, center_point, segment_center),
-                delerp(end_position_, center_point, segment_center)
-              };
-
-              const real s_value = std::min(delerp_values[0], delerp_values[1]);
-              radius = lerp(radius_, arc_constrain, s_value);
-            }
-
-            segment_vector.normalize(radius);
-
-            vector3<> arc_position = arc_origin + segment_vector;
-
-            // Generate two segments from this.
-            if (is_equal(seg.start.distance(arc_position), 0.0) || is_equal(seg.end.distance(arc_position), 0.0))
-            {
-              new_segments.push_back(seg);
-            }
-            else
-            {
-              new_segments.push_back({ seg.start, arc_position });
-              new_segments.push_back({ arc_position, seg.end });
-            }
-          }
-        }
-
-        segments = std::move(new_segments);
-      }
-
-      real total_arc_length = 0.0;
-      const real original_length[2] = {
-        start_position_.distance(corner_),
-        end_position_.distance(corner_)
-      };
-
-      for (const segment & __restrict seg : segments)
-      {
-        total_arc_length += seg.start.distance(seg.end);
-      }
-
-      const real total_arc_length_half = total_arc_length * 0.5;
-
-      const real adusted_extrusions[2] = {
-        extrude_[0] * (total_arc_length_half / original_length[0]),
-        extrude_[1] * (total_arc_length_half / original_length[1])
-      };
-
-      // Segments is now all of the subdivided segments.
-      const real segments_divisor = real(segments.size() + 1);
-      usize iter = 1; // 1 because we want to start in the middle of the interpolation.
-      for (const segment & __restrict seg : segments)
-      {
-        const real interpoland = real(iter++) / segments_divisor;
-
-        const real feedrate = lerp(seg_feedrate_[0], seg_feedrate_[1], interpoland);
-        real extrusion;
-        if (adusted_extrusions[0] == 0.0 && adusted_extrusions[1] != 0.0)
-        {
-          // travel to extrude
-          if (interpoland >= 0.5)
-          {
-            extrusion = ((adusted_extrusions[0] + adusted_extrusions[1]) / (real(segments.size()) / 2));
-          }
-          else
-          {
-            extrusion = 0.0;
-          }
-        }
-        else if (adusted_extrusions[0] != 0.0 && adusted_extrusions[1] == 0.0)
-        {
-          // extrude to travel
-          if (interpoland <= 0.5)
-          {
-            extrusion = ((adusted_extrusions[0] + adusted_extrusions[1]) / (real(segments.size()) / 2));
-          }
-          else
-          {
-            extrusion = 0.0;
-          }
-        }
-        else
-        {
-          // all else
-          extrusion = ((adusted_extrusions[0] + adusted_extrusions[1]) / segments.size());
-        }
-        const real acceleration = lerp(acceleration_[0], acceleration_[1], interpoland);
-        const real extrude_jerk = lerp(extrude_jerk_[0], extrude_jerk_[1], interpoland);
-        const vector3<> jerk = lerp(jerk_[0], jerk_[1], interpoland);
-
-        out_gcode_segment(
-          out,
-          state,
-          feedrate,
-          extrusion,
-          acceleration,
-          extrude_jerk,
-          jerk,
-          seg.start,
-          seg.end
-        );
+        assert(false); // what exactly are we outputting? TODO add better error system.
       }
     }
 

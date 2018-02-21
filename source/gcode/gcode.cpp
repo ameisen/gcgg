@@ -819,7 +819,7 @@ std::vector<gcgg::command *> gcode::process(const config & __restrict cfg) const
         segment_vectors[1].normalized(),
       };
 
-      const double angle = std::acos(segment_norm_vectors[0].dot(segment_norm_vectors[1])) * 57.2958;
+      const double angle = segment_norm_vectors[0].angle_between(segment_norm_vectors[1]);
 
       if (angle <= cfg.arc.min_angle)
       {
@@ -832,8 +832,8 @@ std::vector<gcgg::command *> gcode::process(const config & __restrict cfg) const
       double arc_radius;
       if (is_travel && cfg.arc.halve_travels)
       {
-        arc_radius = std::min(
-          prev_segment_cmd->get_vector().length() / 2,
+        arc_radius = min(
+          prev_segment_cmd->get_vector().length(),
           cur_segment_cmd->get_vector().length() / 2
         );
       }
@@ -953,6 +953,7 @@ std::vector<gcgg::command *> gcode::process(const config & __restrict cfg) const
       new_arc->is_travel_ = is_travel;
 
       // Do we need to delete the previous segment (has it been completely replaced with arcs?
+      // TODO currently we never destroy the current segment as we check against half-lengths. We should revisit that.
       if (is_equal(prev_segment_cmd->get_vector().length(), 0.0))
       {
         delete *prev_iter;

@@ -31,12 +31,12 @@ namespace gcgg
 
     constexpr T min_element() const __restrict
     {
-      return std::min(x, std::min(y, z));
+      return min(x, y, z);
     }
 
     constexpr T max_element() const __restrict
     {
-      return std::max(x, std::max(y, z));
+      return max(x, y, z);
     }
 
     constexpr T length_sq() const __restrict
@@ -79,9 +79,9 @@ namespace gcgg
     constexpr vector3 limit(const vector3 &__restrict vec) const __restrict
     {
       return {
-        std::min(x, vec.x),
-        std::min(y, vec.y),
-        std::min(z, vec.z)
+        min(x, vec.x),
+        min(y, vec.y),
+        min(z, vec.z)
       };
     }
 
@@ -209,6 +209,11 @@ namespace gcgg
     constexpr T dot(const vector3 & __restrict vec) const __restrict
     {
       return x * vec.x + y * vec.y + z * vec.z;
+    }
+
+    constexpr const T angle_between(const vector3 & __restrict vec) const __restrict
+    {
+      return dot_to_angle(dot(vec));
     }
 
     constexpr T distance_sq(const vector3 & __restrict vec) const __restrict

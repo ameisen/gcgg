@@ -229,15 +229,15 @@ void segments::movement::compute_motion(const config & __restrict cfg, bool requ
     real divisor = 1.0;
     if (jerk_velocity.x > jerk.x)
     {
-      divisor = std::min(divisor, jerk_velocity.x / jerk.x);
+      divisor = min(divisor, jerk_velocity.x / jerk.x);
     }
     if (jerk_velocity.y > jerk.y)
     {
-      divisor = std::min(divisor, jerk_velocity.y / jerk.y);
+      divisor = min(divisor, jerk_velocity.y / jerk.y);
     }
     if (jerk_velocity.z > jerk.z)
     {
-      divisor = std::min(divisor, jerk_velocity.z / jerk.z);
+      divisor = min(divisor, jerk_velocity.z / jerk.z);
     }
 
     jerk_velocity /= divisor;

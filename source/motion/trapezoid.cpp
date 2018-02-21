@@ -107,7 +107,7 @@ motion::trapezoid::trapezoid(const data & __restrict init) :
         0.5 * (sqrt(2.0) * sqrt(2.0 * distance * linear_acceleration + sq(init.start_speed_) - sq(init.end_speed_)) + 2.0 * init.start_speed_)
       };
 
-      const real best_speed = std::max(speed_solutions[0], speed_solutions[1]);
+      const real best_speed = max(speed_solutions[0], speed_solutions[1]);
 
       const real new_ramp_speed_diff[2] = {
         best_speed - init.start_speed_,

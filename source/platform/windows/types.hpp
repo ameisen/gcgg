@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <vector>
+#include <array>
 #include <string>
 
 namespace gcgg
@@ -31,4 +32,10 @@ namespace gcgg
   using float64 = double;
 
   using real = float64;
+
+  template <typename T>
+  using vector = std::vector<T>;
+
+  template <typename T, usize N>
+  using array = std::array<T, N>;
 }
