@@ -20,7 +20,7 @@ namespace gcgg
       bool generate = true;
       bool constant_speed = true; // Should the arc only allow a constant speed across it?
       usize max_segments = 100000;
-      real max_angle = 179.9;
+      real max_angle = 150.0;
       real min_angle = 30.0; // 45 degrees
       real radius = 0.1; // The radius of the circle of the arc. Also equal to how much of a linear segment is 'cut off' from the corner.
       real travel_radius = 0.8; // Travels can have a much larger radius.

@@ -65,7 +65,7 @@ namespace gcgg::segments
     {
       // TODO validate segments against a jerk test, and subdivide further if the jerk test fails.
 
-      const vector3<> center_point = mean(start_position_ + end_position_);
+      const vector3<> center_point = mean(start_position_, end_position_);
       const vector3<> arc_origin = arc_origin_;
 
       // TODO something here still isn't right, as the radius' we get aren't correct for our angles all the time.
@@ -141,7 +141,7 @@ namespace gcgg::segments
             segments[i + 1];
 
           // Every segment here will get split in twain.
-          vector3<> segment_center = mean(seg.start + seg.end);
+          vector3<> segment_center = mean(seg.start, seg.end);
           // We need to renormalize this center position around the arc origin.
 
           // Get the angle to and from this segment, to see if it needs to be subdivided.
@@ -222,9 +222,9 @@ namespace gcgg::segments
       }
 
       // Calculate new feedrate.
-      const real mean_feedrate = mean(seg_feedrate_[0] + seg_feedrate_[1]);
-      const real mean_acceleration = mean(acceleration_[0] + acceleration_[1]);
-      const vector3<> mean_jerk = mean(jerk_[0] + jerk_[1]);
+      const real mean_feedrate = mean(seg_feedrate_[0], seg_feedrate_[1]);
+      const real mean_acceleration = mean(acceleration_[0], acceleration_[1]);
+      const vector3<> mean_jerk = mean(jerk_[0], jerk_[1]);
 
       const vector3<> in_velocity = (corner_ - start_position_).normalized(seg_feedrate_[0]);
       const vector3<> out_velocity = (end_position_ - corner_).normalized(seg_feedrate_[1]);
@@ -265,7 +265,7 @@ namespace gcgg::segments
         { adusted_extrusions[0], adusted_extrusions[1] },
         mean_acceleration,
         mean_jerk,
-        mean(extrude_jerk_[0] + extrude_jerk_[1])
+        mean(extrude_jerk_[0], extrude_jerk_[1])
       };
     }
 
@@ -332,11 +332,11 @@ namespace gcgg::segments
         jerk_[0].z = jerk_[1].z;
       }
 
-      acceleration_hint_ = mean(acceleration_[0] + acceleration_[1]);
-      jerk_hint_ = mean(jerk_[0] + jerk_[1]);
-      jerk_extrude_hint_ = mean(extrude_jerk_[0] + extrude_jerk_[1]);
+      acceleration_hint_ = mean(acceleration_[0], acceleration_[1]);
+      jerk_hint_ = mean(jerk_[0], jerk_[1]);
+      jerk_extrude_hint_ = mean(extrude_jerk_[0], extrude_jerk_[1]);
 
-      const vector3<> center_point = mean(start_position_ + end_position_);
+      const vector3<> center_point = mean(start_position_, end_position_);
       arc_origin_ = corner_ + ((center_point - corner_) * 2.0); // TODO needs to be adjusted for ovaloid arcs.
     }
     arc() : movement(type) {}

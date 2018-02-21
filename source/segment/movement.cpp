@@ -1,8 +1,6 @@
 #include "gcgg.hpp"
 #include "movement.hpp"
 
-extern usize failed_jerk_tests;
-
 void segments::movement::compute_motion(const config & __restrict cfg, bool require_jerk) __restrict
 {
   //motion::trapezoid::data trap_data;
@@ -210,7 +208,7 @@ void segments::movement::compute_motion(const config & __restrict cfg, bool requ
           out_feedrate = 0;
           if (require_jerk)
           {
-            ++failed_jerk_tests;
+            //++failed_jerk_tests;
           }
         }
       }
