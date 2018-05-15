@@ -74,14 +74,17 @@ namespace gcgg::instructions
       }
       if (home_axis_.x)
       {
+        state.prev_position.x = state.position.x;
         state.position.x = 0.0;
       }
       if (home_axis_.y)
       {
+        state.prev_position.y = state.position.y;
         state.position.y = 0.0;
       }
       if (home_axis_.z)
       {
+        state.prev_position.z = state.position.z;
         state.position.z = 0.0;
       }
       out += "\n";

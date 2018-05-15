@@ -60,6 +60,7 @@ namespace gcgg::segments
 
       if (start_position_.z != end_position_.z)
       {
+        state.prev_position.z = state.position.z;
         state.position.z = end_position_.z;
         sprintf(buffer, "%.8f", state.position.z);
         out += " Z";

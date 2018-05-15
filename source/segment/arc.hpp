@@ -59,6 +59,45 @@ namespace gcgg::segments
       real extrude_jerk_;
     };
 
+    std::tuple<bool, real> is_simple_arc(const config & __restrict cfg, bool high_precision = false) const __restrict
+    {
+      const vector3<> arc_origin = arc_origin_;
+
+      const real arc_radius = radius_;
+      
+      segment_data segdata = get_segments_(cfg, high_precision);
+
+      const std::vector<segment> & __restrict segments = segdata.segments_;
+      std::vector<real> radii;
+      radii.reserve(segments.size() + 2);
+      radii.push_back((start_position_ - arc_origin).length());
+
+      for (const segment & __restrict seg : segments)
+      {
+        radii.push_back((seg.start - arc_origin).length());
+      }
+
+      radii.push_back((end_position_ - arc_origin).length());
+
+      real mean_radius = 0.0;
+      for (const real & __restrict radius : radii)
+      {
+        mean_radius += radius / real(radii.size());
+      }
+
+      // TODO this needs to be a config option.
+      static constexpr const real max_radius_diff = 0.001;
+      for (const real & __restrict radius : radii)
+      {
+        if (abs(radius - mean_radius) >= max_radius_diff)
+        {
+          return { false, mean_radius };
+        }
+      }
+
+      return { true, mean_radius };
+    }
+
     // high_precision forces very small subsegments, for calculation of arcs for arc instruction emission.
     // Should not be used when subdividing arcs.
     segment_data get_segments_ (const config & __restrict cfg, bool high_precision = false) const __restrict
@@ -357,6 +396,11 @@ namespace gcgg::segments
       return extrude_[0] + extrude_[1];
     }
 
+    bool should_subdivide(const config & __restrict cfg) const __restrict
+    {
+      return !std::get<0>(is_simple_arc(cfg, true));
+    }
+
     std::vector<gcgg::command *> generate_segments(const config & __restrict cfg) const __restrict
     {
       std::vector<gcgg::command *> out;
@@ -456,7 +500,151 @@ namespace gcgg::segments
       const segment_data segdata = get_segments_(cfg);
       const std::vector<segment> & __restrict segments = segdata.segments_;
 
-      if (cfg.output.generate_G15)
+      if (cfg.output.generate_G02_G03)
+      {
+        const real radius = std::get<1>(is_simple_arc(cfg, true));
+
+        if (acceleration_hint_ != state.print_accel && acceleration_hint_ != 0)
+        {
+          state.print_accel = acceleration_hint_;
+
+          out += "M204";
+
+          char buffer[512];
+          sprintf(buffer, "%.8f", acceleration_hint_);
+          out += " P";
+          out += trim_float(buffer);
+          out += "\n";
+        }
+
+        bool emit_jerk_hint = false;
+        if (start_position_.x != end_position_.x && jerk_hint_.x != state.jerk.x && jerk_hint_.x != 0)
+        {
+          emit_jerk_hint = true;
+        }
+        if (start_position_.y != end_position_.y && jerk_hint_.y != state.jerk.y && jerk_hint_.y != 0)
+        {
+          emit_jerk_hint = true;
+        }
+        if (start_position_.z != end_position_.z && jerk_hint_.z != state.jerk.z && jerk_hint_.z != 0)
+        {
+          emit_jerk_hint = true;
+        }
+
+        if (emit_jerk_hint)
+        {
+          out += "M205";
+          char buffer[512];
+          if (start_position_.x != end_position_.x && jerk_hint_.x != state.jerk.x && jerk_hint_.x != 0)
+          {
+            state.jerk.x = jerk_hint_.x;
+            sprintf(buffer, "%.8f", jerk_hint_.x);
+            out += " X";
+            out += trim_float(buffer);
+          }
+          if (start_position_.y != end_position_.y && jerk_hint_.y != state.jerk.y && jerk_hint_.y != 0)
+          {
+            state.jerk.y = jerk_hint_.y;
+            sprintf(buffer, "%.8f", jerk_hint_.y);
+            out += " Y";
+            out += trim_float(buffer);
+          }
+          if (start_position_.z != end_position_.z && jerk_hint_.z != state.jerk.z && jerk_hint_.z != 0)
+          {
+            state.jerk.z = jerk_hint_.z;
+            sprintf(buffer, "%.8f", jerk_hint_.z);
+            out += " Z";
+            out += trim_float(buffer);
+          }
+          out += "\n";
+        }
+
+        // Clockwise or counter-clockwise?
+        vector3<> in_direction = state.position - state.prev_position;
+        in_direction.normalize();
+        vector3<> move_direction = end_position_ - state.position;
+        move_direction.normalize();
+
+        // figure out what to cross against.
+        vector3<> left_direction;
+        if (move_direction.x >= move_direction.z && move_direction.y >= move_direction.z)
+        {
+          // XY
+          const vector3<> up = { 0.0, 0.0, 1.0 };
+          left_direction = in_direction.cross(up);
+        }
+        else if (move_direction.x >= move_direction.y && move_direction.z >= move_direction.y)
+        {
+          // XZ
+          const vector3<> up = { 0.0, 1.0, 0.0 };
+          left_direction = in_direction.cross(up);
+        }
+        else if (move_direction.y >= move_direction.z && move_direction.y >= move_direction.z)
+        {
+          // YZ
+          const vector3<> up = { 1.0, 0.0, 0.0 };
+          left_direction = in_direction.cross(up);
+        }
+
+        const real dot_product = move_direction.dot(left_direction);
+
+        std::string cmd;
+
+        if (dot_product <= 0.0)
+        {
+          // Counter
+          out += "G03";
+        }
+        else
+        {
+          // Clock
+          out += "G02";
+        }
+
+        char buffer[512];
+
+        {
+          sprintf(buffer, "%.8f", radius);
+          out += " R";
+          out += trim_float(buffer);
+        }
+        //if (start_position_.x != end_position_.x)
+        {
+          state.prev_position.x = state.position.x;
+          state.position.x = end_position_.x;
+          sprintf(buffer, "%.8f", state.position.x);
+          out += " X";
+          out += trim_float(buffer);
+        }
+        //if (start_position_.y != end_position_.y)
+        {
+          state.prev_position.y = state.position.y;
+          state.position.y = end_position_.y;
+          sprintf(buffer, "%.8f", state.position.y);
+          out += " Y";
+          out += trim_float(buffer);
+        }
+        if (start_position_.z != end_position_.z)
+        {
+          state.prev_position.z = state.position.z;
+          state.position.z = end_position_.z;
+          sprintf(buffer, "%.8f", state.position.z);
+          out += " Z";
+          out += trim_float(buffer);
+        }
+
+        if (feedrate_ != state.feedrate)
+        {
+          state.feedrate = feedrate_;
+
+          sprintf(buffer, "%.8f", feedrate_);
+          out += " F";
+          out += trim_float(buffer);
+        }
+
+        out += "\n";
+      }
+      else if (cfg.output.generate_G15)
       {
         // G15 specifies the input feedrate and output feedrate for each axis. The firmware linearly interpolates between these based on time.
         vector3<> in_feedrate = parent_velocities_[0];
@@ -476,6 +664,7 @@ namespace gcgg::segments
 
         if (start_position_.x != end_position_.x)
         {
+          state.prev_position.x = state.position.x;
           state.position.x = end_position_.x;
           sprintf(buffer, "%.8f", state.position.x);
           out += " X";
@@ -483,6 +672,7 @@ namespace gcgg::segments
         }
         if (start_position_.y != end_position_.y)
         {
+          state.prev_position.y = state.position.y;
           state.position.y = end_position_.y;
           sprintf(buffer, "%.8f", state.position.y);
           out += " Y";
@@ -490,6 +680,7 @@ namespace gcgg::segments
         }
         if (start_position_.z != end_position_.z)
         {
+          state.prev_position.z = state.position.z;
           state.position.z = end_position_.z;
           sprintf(buffer, "%.8f", state.position.z);
           out += " Z";
@@ -634,6 +825,7 @@ namespace gcgg::segments
 
       if (start_position.x != end_position.x)
       {
+        state.prev_position.x = state.position.x;
         state.position.x = end_position.x;
         sprintf(buffer, "%.8f", state.position.x);
         out += " X";
@@ -641,6 +833,7 @@ namespace gcgg::segments
       }
       if (start_position.y != end_position.y)
       {
+        state.prev_position.y = state.position.y;
         state.position.y = end_position.y;
         sprintf(buffer, "%.8f", state.position.y);
         out += " Y";
@@ -648,6 +841,7 @@ namespace gcgg::segments
       }
       if (start_position.z != end_position.z)
       {
+        state.prev_position.z = state.position.z;
         state.position.z = end_position.z;
         sprintf(buffer, "%.8f", state.position.z);
         out += " Z";

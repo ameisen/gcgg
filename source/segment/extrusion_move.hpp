@@ -122,6 +122,7 @@ namespace gcgg::segments
 
       if (start_position_.x != end_position_.x)
       {
+        state.prev_position.x = state.position.x;
         state.position.x = end_position_.x;
         sprintf(buffer, "%.8f", state.position.x);
         out += " X";
@@ -129,6 +130,7 @@ namespace gcgg::segments
       }
       if (start_position_.y != end_position_.y)
       {
+        state.prev_position.y = state.position.y;
         state.position.y = end_position_.y;
         sprintf(buffer, "%.8f", state.position.y);
         out += " Y";
@@ -136,6 +138,7 @@ namespace gcgg::segments
       }
       if (start_position_.z != end_position_.z)
       {
+        state.prev_position.z = state.position.z;
         state.position.z = end_position_.z;
         sprintf(buffer, "%.8f", state.position.z);
         out += " Z";

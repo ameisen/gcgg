@@ -17,5 +17,6 @@ namespace gcgg::output
     std::unordered_map<uint, uint> fan_speeds;
 
     vector3<> position;
+    vector3<> prev_position;
   };
 }

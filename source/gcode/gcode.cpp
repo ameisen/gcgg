@@ -993,13 +993,20 @@ std::vector<gcgg::command *> gcode::process(const config & __restrict cfg) const
 
       gcgg::segments::arc * __restrict arc_seg = static_cast<gcgg::segments::arc * __restrict>(cmd);
 
-      i = out.erase(i);
+      if (arc_seg->should_subdivide(cfg))
+      {
+        i = out.erase(i);
 
-      auto new_segments = arc_seg->generate_segments(cfg);
+        auto new_segments = arc_seg->generate_segments(cfg);
 
-      delete arc_seg;
+        delete arc_seg;
 
-      i = out.insert(i, new_segments.begin(), new_segments.end());
+        i = out.insert(i, new_segments.begin(), new_segments.end());
+      }
+      else
+      {
+        ++i;
+      }
     }
   }
 
@@ -1031,7 +1038,7 @@ std::vector<gcgg::command *> gcode::process(const config & __restrict cfg) const
   printf("Calculating Motion\n");
   for (auto * __restrict seg : out)
   {
-    //seg->compute_motion(cfg, true);
+    seg->compute_motion(cfg, true);
   }
 
   return out;

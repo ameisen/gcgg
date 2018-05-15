@@ -85,6 +85,15 @@ namespace gcgg
       };
     }
 
+    constexpr vector3 cross(const vector3 &__restrict vec) const __restrict
+    {
+      return {
+        y * vec.z - z * vec.y,
+        z * vec.x - x * vec.z,
+        x * vec.y - y * vec.x
+      };
+    }
+
     constexpr vector3 normalized(T magnitude = 1.0) const __restrict
     {
       const T current_magnitude_recip = magnitude / length();
