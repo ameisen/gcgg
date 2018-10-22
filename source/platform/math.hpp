@@ -19,6 +19,7 @@ namespace gcgg
     static constexpr const float pi = 3.141592653589793238f;
     static constexpr const float pi2 = pi * 2.0f;
     static constexpr const float rad_to_angle = 360.0f / pi2;
+    static constexpr const float angle_to_rad = pi2 / 360.0f;
   };
 
   template <>
@@ -30,7 +31,20 @@ namespace gcgg
     static constexpr const double pi = 3.141592653589793238;
     static constexpr const double pi2 = pi * 2.0;
     static constexpr const double rad_to_angle = 360.0 / pi2;
+    static constexpr const double angle_to_rad = pi2 / 360.0;
   };
+
+  template <typename T>
+  static constexpr T square(const T & __restrict value)
+  {
+    return value * value;
+  }
+
+  template <typename T>
+  static constexpr T cube(const T & __restrict value)
+  {
+    return value * value;
+  }
 
   static constexpr float abs(float v)
   {

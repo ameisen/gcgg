@@ -68,6 +68,7 @@ namespace gcgg::segments
     real get_feedrate() const __restrict { return feedrate_; }
     const vector3<> & __restrict get_start_position() const __restrict { return start_position_; }
     const vector3<> & __restrict get_end_position() const __restrict { return end_position_; }
+    vector3<> get_mean_position() const __restrict { return mean(start_position_, end_position_); }
     virtual vector3<> get_vector() const __restrict override final { return end_position_ - start_position_; }
 
     void set_end_position(const vector3<> & __restrict position) __restrict

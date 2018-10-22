@@ -205,11 +205,13 @@
     <ClInclude Include="..\..\source\platform\math.hpp" />
     <ClInclude Include="..\..\source\platform\math_post.hpp" />
     <ClInclude Include="..\..\source\platform\platform.hpp" />
+    <ClInclude Include="..\..\source\platform\utility.hpp" />
     <ClInclude Include="..\..\source\platform\vector3.hpp" />
     <ClInclude Include="..\..\source\platform\windows\defines.hpp" />
     <ClInclude Include="..\..\source\platform\windows\types.hpp" />
     <ClInclude Include="..\..\source\platform\windows\windows.hpp" />
     <ClInclude Include="..\..\source\segment\arc.hpp" />
+    <ClInclude Include="..\..\source\segment\arc_accumulator.hpp" />
     <ClInclude Include="..\..\source\segment\extrusion.hpp" />
     <ClInclude Include="..\..\source\segment\extrusion_move.hpp" />
     <ClInclude Include="..\..\source\segment\hop.hpp" />

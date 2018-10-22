@@ -215,6 +215,11 @@ namespace gcgg
       return { -x, -y, -z };
     }
 
+    constexpr vector3 vector_to(const vector3 & __restrict vec) const __restrict
+    {
+      return (vec - *this).normalized();
+    }
+
     constexpr T dot(const vector3 & __restrict vec) const __restrict
     {
       return x * vec.x + y * vec.y + z * vec.z;

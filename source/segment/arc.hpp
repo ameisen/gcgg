@@ -61,6 +61,11 @@ namespace gcgg::segments
 
     std::tuple<bool, real> is_simple_arc(const config & __restrict cfg, bool high_precision = false) const __restrict
     {
+      if (!cfg.output.arcs_support_Z && start_position_.z != end_position_.z)
+      {
+        return { false, 0.0 };
+      }
+
       const vector3<> arc_origin = arc_origin_;
 
       const real arc_radius = radius_;
@@ -564,26 +569,27 @@ namespace gcgg::segments
         in_direction.normalize();
         vector3<> move_direction = end_position_ - state.position;
         move_direction.normalize();
+        vector3<> move_direction_abs = move_direction.abs();
 
         // figure out what to cross against.
         vector3<> left_direction;
-        if (move_direction.x >= move_direction.z && move_direction.y >= move_direction.z)
+        if (move_direction_abs.x >= move_direction_abs.z && move_direction_abs.y >= move_direction_abs.z)
         {
           // XY
           const vector3<> up = { 0.0, 0.0, 1.0 };
-          left_direction = in_direction.cross(up);
+          left_direction = in_direction.cross(up).normalized();
         }
-        else if (move_direction.x >= move_direction.y && move_direction.z >= move_direction.y)
+        else if (move_direction_abs.x >= move_direction_abs.y && move_direction_abs.z >= move_direction_abs.y)
         {
           // XZ
           const vector3<> up = { 0.0, 1.0, 0.0 };
-          left_direction = in_direction.cross(up);
+          left_direction = in_direction.cross(up).normalized();
         }
-        else if (move_direction.y >= move_direction.z && move_direction.y >= move_direction.z)
+        else if (move_direction_abs.y >= move_direction_abs.z && move_direction_abs.y >= move_direction_abs.z)
         {
           // YZ
           const vector3<> up = { 1.0, 0.0, 0.0 };
-          left_direction = in_direction.cross(up);
+          left_direction = in_direction.cross(up).normalized();
         }
 
         const real dot_product = move_direction.dot(left_direction);
@@ -593,12 +599,12 @@ namespace gcgg::segments
         if (dot_product <= 0.0)
         {
           // Counter
-          out += "G03";
+          out += "G3";
         }
         else
         {
           // Clock
-          out += "G02";
+          out += "G2";
         }
 
         char buffer[512];

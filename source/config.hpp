@@ -17,13 +17,13 @@ namespace gcgg
 
     struct
     {
-      bool generate = true;
+      bool generate = false;
       bool constant_speed = true; // Should the arc only allow a constant speed across it?
       usize max_segments = 100000;
       real max_angle = 170.0;
       real min_angle = 30.0; // 45 degrees
       real radius = 0.1; // The radius of the circle of the arc. Also equal to how much of a linear segment is 'cut off' from the corner.
-      real travel_radius = 0.8; // Travels can have a much larger radius.
+      real travel_radius = 0.8; // Travels can have a much larger radius.so cl
       bool halve_travels = false;
       real min_radius = 0.05; // might need to be smaller... or larger.
       bool constrain_radius = true; // Should we constrain the radius to the original vertex position?
@@ -31,7 +31,7 @@ namespace gcgg
 
     struct
     {
-      bool enable = true; // Should we try to smooth certain angles no matter what?
+      bool enable = false; // Should we try to smooth certain angles no matter what?
       real min_angle = 20.0;
       real new_angle = 5.0;
     } smoothing;
@@ -39,7 +39,9 @@ namespace gcgg
     struct
     {
       bool enable = true;
-      real max_angle = 20.0; // this is the max angle that it will consider from the difference between two points for if they are part of a circle-arc or not.
+      real max_angle = 10.0; // this is the max angle that it will consider from the difference between two points for if they are part of a circle-arc or not.
+      real max_angle_divergence = 10.0; // Max difference from an arc's mean angle that we will allow.
+      real max_segment_length = 5.0; // max segment length we will consider for arcs.
     } reg_arc_gen;
 
     enum class format
@@ -55,6 +57,7 @@ namespace gcgg
 
       bool generate_G15 = false; // G15 is a custom instruction that generates a movement arc. Not the same as a controlled arc.
       bool generate_G02_G03 = true;
+      bool arcs_support_Z = false;
     } output;
 
     struct

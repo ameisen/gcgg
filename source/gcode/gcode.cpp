@@ -7,6 +7,7 @@
 #include "segment/linear.hpp"
 #include "segment/travel.hpp"
 #include "segment/arc.hpp"
+#include "segment/arc_accumulator.hpp"
 
 #include "instruction/M84.hpp"
 #include "instruction/M104.hpp"
@@ -976,6 +977,110 @@ std::vector<gcgg::command *> gcode::process(const config & __restrict cfg) const
     }
 
     printf("Generated Corner Arcs: %llu\n", generated_arcs);
+  }
+
+  // Generate arcs where possible.
+  if (cfg.reg_arc_gen.enable)
+  {
+    std::vector<gcgg::command * __restrict> erase_set;
+
+    uint64_t generated_arcs = 0;
+    segments::arc_accumulator accumulator;
+
+    printf("Generating Arcs from curved segment sets\n");
+
+    const auto flush_accumulator = [&](auto &iterator) -> bool
+    {
+      if (!accumulator.conditional_reset())
+      {
+        // If the accumulator is actually valid, it means we've generated an arc.
+        // TODO optimize this bit.
+        erase_set.insert(erase_set.end(), accumulator.get_segments().begin(), accumulator.get_segments().end());
+        iterator = out.insert(iterator, new segments::arc_accumulator(std::move(accumulator)));
+        ++generated_arcs;
+        accumulator.reset();
+        return true;
+      }
+      return false;
+    };
+
+    for (auto i = out.begin(); i != out.end();)
+    {
+      gcgg::command * __restrict cmd = *i;
+
+      const auto is_move = [](const auto * __restrict cmd)->bool
+      {
+        switch (cmd->get_type())
+        {
+        case segments::extrusion_move::type:
+        case segments::hop::type:
+        case segments::linear::type:
+        case segments::travel::type:
+          return true;
+        }
+        return false;
+      };
+
+      if (!is_move(cmd))
+      {
+        // We don't consume this one.
+        if (!flush_accumulator(i))
+        {
+          ++i;
+        }
+        continue;
+      }
+
+      segments::movement * __restrict segment_cmd = static_cast<segments::movement * __restrict>(cmd);
+      
+      if (!accumulator.consume_segment(*segment_cmd, cfg))
+      {
+        // If we don't consume this, this arc is finished, if it exists at all.
+        if (!flush_accumulator(i))
+        {
+          ++i;
+        }
+        continue;
+      }
+
+      // If we did consume it... yay. Continue to the next one.
+      ++i;
+    }
+    if (!accumulator.conditional_reset())
+    {
+      // If the accumulator is actually valid, it means we've generated an arc.
+      // TODO optimize this bit.
+      erase_set.insert(erase_set.end(), accumulator.get_segments().begin(), accumulator.get_segments().end());
+      out.push_back(new segments::arc_accumulator(std::move(accumulator)));
+      ++generated_arcs;
+      accumulator.reset();
+    }
+
+    // Clear the erase set. This is messy and slow.
+    if (erase_set.size())
+    {
+      printf("Performing segment garbage collection... (%llu segments to delete)\n", uint64(erase_set.size()));
+      for (auto i = out.begin(); i != out.end();)
+      {
+        auto ei = std::find(erase_set.begin(), erase_set.end(), *i);
+        if (ei != erase_set.end())
+        {
+          // No need to perform a normal erase which requires a copy. Do a fast erase.
+          fast_erase_iterator(erase_set, ei);
+          i = out.erase(i);
+          if (erase_set.size() == 0)
+          {
+            break;
+          }
+        }
+        else
+        {
+          ++i;
+        }
+      }
+    }
+
+    printf("Generated Arcs: %llu\n", generated_arcs);
   }
 
   if (cfg.arc.generate && cfg.output.subdivide_arcs)

@@ -159,5 +159,11 @@
     <ClInclude Include="..\..\source\motion\trapezoid.hpp">
       <Filter>motion</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\source\segment\arc_accumulator.hpp">
+      <Filter>segment</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\platform\utility.hpp">
+      <Filter>platform</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -9,5 +9,6 @@
 #include "math.hpp"
 #include "hash.hpp"
 #include "vector3.hpp"
+#include "utility.hpp"
 
 #include "math_post.hpp"
